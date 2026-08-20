@@ -1,0 +1,43 @@
+{
+  "event": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "Galavečer Tumbao 2027",
+    "eventDate": "2027-05-29T17:00:00.000Z",
+    "venue": "GoJa Music Hall, Prague",
+    "timezone": "Europe/Prague",
+    "currency": "CZK"
+  },
+  "categories": {
+    "PREMIUM": { "name": "1st category", "priceMinor": 99000 },
+    "STANDARD": { "name": "2nd category", "priceMinor": 79000 },
+    "VALUE": { "name": "3rd category", "priceMinor": 59000 }
+  },
+  "seatLayouts": [
+    { "section": "D", "rows": 5, "seatsPerRow": 8, "x": 145, "y": 105, "direction": "rtl", "category": "STANDARD" },
+    { "section": "C", "rows": 5, "seatsPerRow": 8, "x": 335, "y": 105, "direction": "ltr", "category": "PREMIUM" },
+    { "section": "B", "rows": 5, "seatsPerRow": 8, "x": 525, "y": 105, "direction": "rtl", "category": "PREMIUM" },
+    { "section": "A", "rows": 5, "seatsPerRow": 8, "x": 715, "y": 105, "direction": "ltr", "category": "STANDARD" },
+    { "section": "H", "rows": 4, "seatsPerRow": 8, "x": 145, "y": 265, "direction": "rtl", "category": "STANDARD" },
+    { "section": "G", "rows": 4, "seatsPerRow": 8, "x": 335, "y": 265, "direction": "ltr", "category": "PREMIUM" },
+    { "section": "F", "rows": 4, "seatsPerRow": 8, "x": 525, "y": 265, "direction": "rtl", "category": "PREMIUM" },
+    { "section": "E", "rows": 4, "seatsPerRow": 8, "x": 715, "y": 265, "direction": "ltr", "category": "STANDARD" },
+    { "section": "L", "rows": 3, "seatsPerRow": 7, "x": 165, "y": 405, "direction": "rtl", "category": "VALUE" },
+    { "section": "K", "rows": 3, "seatsPerRow": 8, "x": 335, "y": 405, "direction": "ltr", "category": "VALUE" },
+    { "section": "J", "rows": 3, "seatsPerRow": 8, "x": 525, "y": 405, "direction": "rtl", "category": "VALUE" },
+    { "section": "I", "rows": 3, "seatsPerRow": 7, "x": 715, "y": 405, "direction": "ltr", "category": "VALUE" }
+  ],
+  "initialSoldSeatIds": ["seat-C-1-1", "seat-C-1-2"],
+  "initialHeldSeatIds": ["seat-B-2-4"],
+  "samplePaidOrder": {
+    "id": "order-sample-paid",
+    "orderNumber": "TUM-2027-00001",
+    "customer": { "name": "Demo Guest", "email": "guest@example.test", "phone": "+420 700 000 000" },
+    "seatIds": ["seat-C-1-1", "seat-C-1-2"],
+    "ticketCodes": ["TUM-DEMO-001", "TUM-DEMO-002"],
+    "qrTokens": ["tumbao_demo_ticket_001", "tumbao_demo_ticket_002"]
+  },
+  "admins": [
+    { "id": "admin-demo", "name": "Demo Administrator", "role": "ADMIN" },
+    { "id": "scanner-demo", "name": "Door Scanner", "role": "SCANNER" }
+  ]
+}
