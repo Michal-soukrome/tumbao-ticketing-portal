@@ -19,7 +19,7 @@ import {
 } from '../domain/models'
 import type { OrderCredentials, ServiceRuntime, TicketingService } from '../services/ticketing-service'
 
-const STORAGE_KEY = 'tumbao:test-data:v4'
+const STORAGE_KEY = 'tumbao:test-data:v5'
 const HOLD_DURATION_MS = 10 * 60 * 1000
 
 interface StoredAllocation {

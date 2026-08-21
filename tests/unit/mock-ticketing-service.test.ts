@@ -12,6 +12,36 @@ describe('MockTicketingService', () => {
     service = new MockTicketingService(createMemoryStorage(), () => now)
   })
 
+  it('matches the venue reference row lengths and outward M extensions', async () => {
+    const { seats } = await service.getSeatMap()
+    const rowCounts = (predicate: (id: string, section: string) => boolean, rows: number) =>
+      Array.from({ length: rows }, (_, index) => seats.filter((seat) => predicate(seat.id, seat.section) && seat.rowLabel === String(index + 1)).length)
+
+    expect(seats).toHaveLength(860)
+    for (const section of ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']) {
+      expect(rowCounts((_id, candidate) => candidate === section, 7)).toEqual([10, 10, 10, 10, 10, 10, 10])
+    }
+    expect(rowCounts((_id, section) => section === 'L', 4)).toEqual([9, 8, 6, 5])
+    expect(rowCounts((_id, section) => section === 'I', 4)).toEqual([9, 8, 6, 5])
+    expect(rowCounts((_id, section) => section === 'K', 6)).toEqual([10, 10, 10, 10, 10, 10])
+    expect(rowCounts((_id, section) => section === 'J', 6)).toEqual([10, 10, 10, 10, 10, 10])
+    expect(rowCounts((id) => id.startsWith('seat-M-left-'), 6)).toEqual([10, 10, 10, 10, 10, 12])
+    expect(rowCounts((id) => id.startsWith('seat-M-right-'), 6)).toEqual([10, 10, 10, 10, 10, 12])
+
+    const xRange = (idPrefix: string, row: string) => {
+      const xValues = seats.filter((seat) => seat.id.startsWith(idPrefix) && seat.rowLabel === row).map((seat) => seat.x)
+      return { min: Math.min(...xValues), max: Math.max(...xValues) }
+    }
+    const leftFive = xRange('seat-M-left-', '5')
+    const leftSix = xRange('seat-M-left-', '6')
+    const rightFive = xRange('seat-M-right-', '5')
+    const rightSix = xRange('seat-M-right-', '6')
+    expect(leftSix.min).toBeLessThan(leftFive.min)
+    expect(leftSix.max).toBeLessThanOrEqual(leftFive.max)
+    expect(rightSix.min).toBeGreaterThanOrEqual(rightFive.min)
+    expect(rightSix.max).toBeGreaterThan(rightFive.max)
+  })
+
   it('atomically rejects a second reservation for an allocated seat', async () => {
     const map = await service.getSeatMap()
     const seat = map.seats.find((candidate) => candidate.status === 'AVAILABLE')!

@@ -25,7 +25,7 @@
     { "section": "K", "rowSeatCounts": [10, 10, 10, 10, 10, 10], "x": 339, "y": 270, "direction": "ltr", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "VALUE" },
     { "section": "J", "rowSeatCounts": [10, 10, 10, 10, 10, 10], "x": 459, "y": 270, "direction": "rtl", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "VALUE" },
     { "section": "I", "rowSeatCounts": [9, 8, 6, 5], "x": 590, "y": 270, "direction": "ltr", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "VALUE" },
-    { "section": "M", "idPrefix": "M-left", "rowSeatCounts": [10, 10, 10, 10, 10, 12], "x": 61, "y": 124, "direction": "ltr", "numberStart": 1, "seatDx": 10, "seatDy": 3, "rowDx": -5, "rowDy": 13, "rotation": 17, "category": "VALUE" },
+    { "section": "M", "idPrefix": "M-left", "rowSeatCounts": [10, 10, 10, 10, 10, 12], "rowXOffsets": [0, -5, -10, -15, -20, -45], "x": 61, "y": 124, "direction": "ltr", "numberStart": 1, "seatDx": 10, "seatDy": 3, "rowDx": -5, "rowDy": 13, "rotation": 17, "category": "VALUE" },
     { "section": "M", "idPrefix": "M-right", "rowSeatCounts": [10, 10, 10, 10, 10, 12], "x": 748, "y": 158, "direction": "rtl", "numberStart": 1, "seatDx": 10, "seatDy": -3, "rowDx": 5, "rowDy": 13, "rotation": -17, "category": "VALUE" }
   ],
   "initialSoldSeatIds": ["seat-C-1-1", "seat-C-1-2"],
