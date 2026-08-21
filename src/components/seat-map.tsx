@@ -7,11 +7,13 @@ import { Button } from './ui'
 interface SeatMapProps {
   seats: SeatDto[]
   selected: Set<string>
+  ownedHeld?: Set<string>
+  selectionLocked?: boolean
   onToggle: (seat: SeatDto) => void
 }
 
-const statusLabel = (seat: SeatDto, selected: boolean) =>
-  `Section ${seat.section}, row ${seat.rowLabel}, seat ${seat.seatNumber}, ${seat.priceCategory}, ${seat.priceMinor / 100} CZK, ${selected ? 'selected' : seat.status.toLowerCase()}`
+const statusLabel = (seat: SeatDto, selected: boolean, ownedHeld: boolean) =>
+  `Section ${seat.section}, row ${seat.rowLabel}, seat ${seat.seatNumber}, ${seat.priceCategory}, ${seat.priceMinor / 100} CZK, ${selected ? 'selected' : ownedHeld ? 'held by you' : seat.status.toLowerCase()}`
 
 const categoryClass = (category: string) => {
   if (category.startsWith('1')) return 'seat-category-1'
@@ -45,7 +47,7 @@ function VenueFixtures() {
   </g>
 }
 
-export function SeatMap({ seats, selected, onToggle }: SeatMapProps) {
+export function SeatMap({ seats, selected, ownedHeld = new Set(), selectionLocked = false, onToggle }: SeatMapProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const panzoomRef = useRef<PanzoomObject | null>(null)
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null)
@@ -93,10 +95,11 @@ export function SeatMap({ seats, selected, onToggle }: SeatMapProps) {
         <VenueFixtures />
         {seats.map((seat) => {
           const isSelected = selected.has(seat.id)
-          const disabled = seat.status !== 'AVAILABLE'
+          const isOwnedHeld = ownedHeld.has(seat.id)
+          const disabled = seat.status !== 'AVAILABLE' || selectionLocked
           return <g key={seat.id} transform={`translate(${seat.x} ${seat.y}) rotate(${seat.rotation})`}>
             <rect
-              className={`seat-block ${categoryClass(seat.priceCategory)} seat-${seat.status.toLowerCase()} ${isSelected ? 'seat-selected' : ''}`}
+              className={`seat-block ${categoryClass(seat.priceCategory)} seat-${seat.status.toLowerCase()} ${isSelected ? 'seat-selected' : ''} ${isOwnedHeld ? 'seat-owned-held' : ''}`}
               data-seat-id={seat.id}
               x="-5"
               y="-5.5"
@@ -107,7 +110,7 @@ export function SeatMap({ seats, selected, onToggle }: SeatMapProps) {
               tabIndex={disabled ? -1 : 0}
               aria-disabled={disabled}
               aria-pressed={isSelected}
-              aria-label={statusLabel(seat, isSelected)}
+              aria-label={statusLabel(seat, isSelected, isOwnedHeld)}
               onClick={(event) => {
                 event.stopPropagation()
                 if (!disabled && isTap(event)) onToggle(seat)

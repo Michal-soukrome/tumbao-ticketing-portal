@@ -16,6 +16,27 @@ test('dense and angled seat cells remain independently clickable', async ({ page
   await expect(page.locator('.seat-block[aria-pressed="true"]')).toHaveCount(5)
 })
 
+test('the current session restores its held seats when returning to the map', async ({ page }) => {
+  const heldSeat = page.getByRole('button', { name: /Section D, row 1, seat 8,.*available/i })
+  await heldSeat.click()
+  const reserve = page.getByRole('button', { name: 'Reserve and continue' })
+  if (await reserve.isVisible()) await reserve.click()
+  else await page.getByRole('button', { name: 'Continue', exact: true }).click()
+
+  await expect(page.getByRole('heading', { name: 'Your details' })).toBeVisible()
+  await page.evaluate(() => {
+    sessionStorage.removeItem('tumbao:active-order')
+    sessionStorage.removeItem('tumbao:active-order-migrated')
+  })
+  await page.goto('/')
+
+  await expect(page.locator('.selection-summary h2')).toHaveText('1 held seat')
+  await expect(page.locator('[data-seat-id="seat-D-1-8"]')).toHaveClass(/seat-owned-held/)
+  await expect(page.locator('.selection-summary')).toContainText(/held for this browser session/i)
+  await page.getByRole('button', { name: 'Continue checkout' }).click()
+  await expect(page.getByRole('heading', { name: 'Your details' })).toBeVisible()
+})
+
 test('customer can reserve, pay, and receive tickets', async ({ page }) => {
   await expect(page.locator('svg[viewBox="0 0 900 400"] [data-testid="interactive-venue-plan"]')).toBeVisible()
   await page.getByRole('button', { name: /Section D, row 1, seat 8,.*available/i }).click()
