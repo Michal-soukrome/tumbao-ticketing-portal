@@ -1,7 +1,9 @@
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-const connectionString = process.env.SUPABASE_DB_URL
+// Direct SQL is test-only and targets the Postgres instance inside the local
+// Supabase stack. Production application code never opens a database socket.
+const connectionString = process.env.SUPABASE_LOCAL_DB_URL
 const describeDatabase = connectionString ? describe : describe.skip
 const sql = connectionString ? postgres(connectionString, { max: 25 }) : null
 const eventId = '00000000-0000-4000-8000-000000000001'

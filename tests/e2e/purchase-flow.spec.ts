@@ -5,11 +5,28 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole('button', { name: /Reset demo data/i }).click()
 })
 
+test('dense and angled seat cells remain independently clickable', async ({ page }) => {
+  await page.getByRole('button', { name: /Section D, row 1, seat 8,.*available/i }).click()
+  await page.getByRole('button', { name: /Section D, row 1, seat 7,.*available/i }).click()
+  await page.getByRole('button', { name: /Section L, row 4, seat 5,.*available/i }).click()
+
+  await page.locator('[data-seat-id="seat-M-left-6-12"]').click()
+  await page.locator('[data-seat-id="seat-M-right-6-12"]').click()
+
+  await expect(page.locator('.seat-block[aria-pressed="true"]')).toHaveCount(5)
+})
+
 test('customer can reserve, pay, and receive tickets', async ({ page }) => {
+  await expect(page.locator('svg[viewBox="0 0 900 400"] [data-testid="interactive-venue-plan"]')).toBeVisible()
   await page.getByRole('button', { name: /Section D, row 1, seat 8,.*available/i }).click()
   const desktopContinue = page.getByRole('button', { name: 'Reserve and continue' })
   if (await desktopContinue.isVisible()) await desktopContinue.click()
-  else await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  else {
+    const mobileContinue = page.getByRole('button', { name: 'Continue', exact: true })
+    const box = await mobileContinue.boundingBox()
+    expect(box).not.toBeNull()
+    await page.touchscreen.tap(box!.x + box!.width / 2, box!.y + box!.height / 2)
+  }
   await expect(page.getByRole('heading', { name: 'Your details' })).toBeVisible()
   await page.getByLabel('Full name').fill('End to End Guest')
   await page.getByLabel('Email').fill('e2e@example.test')

@@ -1,4 +1,4 @@
--- Placeholder geometry derived from map.jpg. Replace row counts/pricing only after
+-- Placeholder geometry for the interactive SVG plan. Replace row counts/pricing only after
 -- the venue and organizer approve the authoritative inventory spreadsheet.
 
 insert into public.events(id, name, event_date, venue, timezone, sales_open_at, sales_close_at)
@@ -17,28 +17,39 @@ insert into public.price_categories(id, event_id, name, price_minor, currency, s
   ('00000000-0000-4000-8000-000000000102', '00000000-0000-4000-8000-000000000001', '2nd category', 79000, 'CZK', 2),
   ('00000000-0000-4000-8000-000000000103', '00000000-0000-4000-8000-000000000001', '3rd category', 59000, 'CZK', 3);
 
-with layouts(section, row_count, seats_per_row, x, y, direction, category_id) as (
+with layouts(
+  section, row_counts, row_x_offsets, x, y, direction, number_start,
+  seat_dx, seat_dy, row_dx, row_dy, rotation, category_id
+) as (
   values
-    ('D', 5, 8, 145, 105, 'rtl', '00000000-0000-4000-8000-000000000102'::uuid),
-    ('C', 5, 8, 335, 105, 'ltr', '00000000-0000-4000-8000-000000000101'::uuid),
-    ('B', 5, 8, 525, 105, 'rtl', '00000000-0000-4000-8000-000000000101'::uuid),
-    ('A', 5, 8, 715, 105, 'ltr', '00000000-0000-4000-8000-000000000102'::uuid),
-    ('H', 4, 8, 145, 265, 'rtl', '00000000-0000-4000-8000-000000000102'::uuid),
-    ('G', 4, 8, 335, 265, 'ltr', '00000000-0000-4000-8000-000000000101'::uuid),
-    ('F', 4, 8, 525, 265, 'rtl', '00000000-0000-4000-8000-000000000101'::uuid),
-    ('E', 4, 8, 715, 265, 'ltr', '00000000-0000-4000-8000-000000000102'::uuid),
-    ('L', 3, 7, 165, 405, 'rtl', '00000000-0000-4000-8000-000000000103'::uuid),
-    ('K', 3, 8, 335, 405, 'ltr', '00000000-0000-4000-8000-000000000103'::uuid),
-    ('J', 3, 8, 525, 405, 'rtl', '00000000-0000-4000-8000-000000000103'::uuid),
-    ('I', 3, 7, 715, 405, 'ltr', '00000000-0000-4000-8000-000000000103'::uuid)
+    ('D', array[10,10,10,10,10,10,10], null::integer[], 205,  50, 'rtl', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000102'::uuid),
+    ('C', array[10,10,10,10,10,10,10], null::integer[], 339,  50, 'ltr', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000101'::uuid),
+    ('B', array[10,10,10,10,10,10,10], null::integer[], 459,  50, 'rtl', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000101'::uuid),
+    ('A', array[10,10,10,10,10,10,10], null::integer[], 590,  50, 'ltr', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000102'::uuid),
+    ('H', array[10,10,10,10,10,10,10], null::integer[], 205, 160, 'rtl', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000102'::uuid),
+    ('G', array[10,10,10,10,10,10,10], null::integer[], 339, 160, 'ltr', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000101'::uuid),
+    ('F', array[10,10,10,10,10,10,10], null::integer[], 459, 160, 'rtl', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000101'::uuid),
+    ('E', array[10,10,10,10,10,10,10], null::integer[], 590, 160, 'ltr', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000102'::uuid),
+    ('L', array[9,8,6,5], array[0,11,33,44], 215, 270, 'rtl', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000103'::uuid),
+    ('K', array[10,10,10,10,10,10], null::integer[], 339, 270, 'ltr', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000103'::uuid),
+    ('J', array[10,10,10,10,10,10], null::integer[], 459, 270, 'rtl', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000103'::uuid),
+    ('I', array[9,8,6,5], null::integer[], 590, 270, 'ltr', 1, 11,  0,  0, 13,   0, '00000000-0000-4000-8000-000000000103'::uuid),
+    ('M-left',  array[10,10,10,10,10,12], null::integer[],  61, 124, 'ltr', 1, 10,  3, -5, 13,  17, '00000000-0000-4000-8000-000000000103'::uuid),
+    ('M-right', array[10,10,10,10,10,12], null::integer[], 748, 158, 'rtl', 1, 10, -3,  5, 13, -17, '00000000-0000-4000-8000-000000000103'::uuid)
 ), expanded as (
   select l.*, row_no, seat_index,
-         case when direction = 'rtl' then seats_per_row - seat_index + 1 else seat_index end as display_number
+         case
+           when direction = 'rtl' then number_start + row_counts[row_no] - seat_index
+           else number_start + seat_index - 1
+         end as display_number
     from layouts l
-    cross join lateral generate_series(1, l.row_count) row_no
-    cross join lateral generate_series(1, l.seats_per_row) seat_index
+    cross join lateral generate_subscripts(l.row_counts, 1) rows(row_no)
+    cross join lateral generate_series(1, l.row_counts[row_no]) seats(seat_index)
 )
-insert into public.seats(event_id, section, row_label, seat_number, price_category_id, pos_x, pos_y)
+insert into public.seats(event_id, section, row_label, seat_number, price_category_id, pos_x, pos_y, rotation)
 select '00000000-0000-4000-8000-000000000001', section, row_no::text, display_number::text,
-       category_id, x + (seat_index - 1) * 20, y + (row_no - 1) * 24
+       category_id,
+       x + coalesce(row_x_offsets[row_no], (row_no - 1) * row_dx) + (seat_index - 1) * seat_dx,
+       y + (row_no - 1) * row_dy + (seat_index - 1) * seat_dy,
+       rotation
   from expanded;

@@ -19,7 +19,7 @@ import {
 } from '../domain/models'
 import type { OrderCredentials, ServiceRuntime, TicketingService } from '../services/ticketing-service'
 
-const STORAGE_KEY = 'tumbao:test-data:v1'
+const STORAGE_KEY = 'tumbao:test-data:v4'
 const HOLD_DURATION_MS = 10 * 60 * 1000
 
 interface StoredAllocation {
@@ -58,21 +58,24 @@ const randomToken = (prefix: string) => {
 function createInitialState(now: () => number): MockState {
   const event = seed.event satisfies EventSummary
   const seats: SeatDto[] = seed.seatLayouts.flatMap((layout) =>
-    Array.from({ length: layout.rows }, (_, rowIndex) =>
-      Array.from({ length: layout.seatsPerRow }, (_, seatIndex) => {
-        const displayNumber = layout.direction === 'rtl' ? layout.seatsPerRow - seatIndex : seatIndex + 1
+    layout.rowSeatCounts.map((seatCount, rowIndex) =>
+      Array.from({ length: seatCount }, (_, seatIndex) => {
+        const rowXOffsets = 'rowXOffsets' in layout ? layout.rowXOffsets : undefined
+        const displayNumber = layout.direction === 'rtl'
+          ? layout.numberStart + seatCount - seatIndex - 1
+          : layout.numberStart + seatIndex
         const category = seed.categories[layout.category as keyof typeof seed.categories]
         return {
-          id: `seat-${layout.section}-${rowIndex + 1}-${displayNumber}`,
+          id: `seat-${'idPrefix' in layout ? layout.idPrefix : layout.section}-${rowIndex + 1}-${displayNumber}`,
           section: layout.section,
           rowLabel: String(rowIndex + 1),
           seatNumber: String(displayNumber),
           priceCategory: category.name,
           priceMinor: category.priceMinor,
           currency: event.currency,
-          x: layout.x + seatIndex * 20,
-          y: layout.y + rowIndex * 24,
-          rotation: 0,
+          x: layout.x + (rowXOffsets?.[rowIndex] ?? rowIndex * layout.rowDx) + seatIndex * layout.seatDx,
+          y: layout.y + rowIndex * layout.rowDy + seatIndex * layout.seatDy,
+          rotation: layout.rotation,
           accessible: false,
           status: 'AVAILABLE' as const,
         }

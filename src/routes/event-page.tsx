@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { CalendarDays, MapPin, ShieldCheck } from 'lucide-react'
@@ -8,6 +7,35 @@ import { useRuntime } from '../app/runtime-context'
 import { AppError, formatMoney, seatLabel, type SeatDto } from '../domain/models'
 import { SeatMap } from '../components/seat-map'
 import { Button, Card, Notice } from '../components/ui'
+
+function MobileBookingBar({
+  seatCount,
+  totalLabel,
+  pending,
+  onContinue,
+}: {
+  seatCount: number
+  totalLabel: string
+  pending: boolean
+  onContinue: () => void
+}) {
+  const barRef = useRef<HTMLDivElement>(null)
+  const supportsPopover = typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype
+
+  useEffect(() => {
+    const bar = barRef.current
+    if (!bar || !supportsPopover) return
+    bar.showPopover()
+    return () => {
+      if (bar.matches(':popover-open')) bar.hidePopover()
+    }
+  }, [supportsPopover])
+
+  return <div ref={barRef} popover={supportsPopover ? 'manual' : undefined} className="mobile-booking-bar">
+    <span><strong>{seatCount} seats</strong><small>{totalLabel}</small></span>
+    <Button className="primary" disabled={pending} onClick={onContinue}>Continue</Button>
+  </div>
+}
 
 export function EventPage() {
   const { service } = useRuntime()
@@ -80,6 +108,6 @@ export function EventPage() {
         <p className="secure-note"><ShieldCheck size={17} /> Seats are held atomically for 10 minutes.</p>
       </Card>
     </div>
-    {selectedSeats.length ? createPortal(<div className="mobile-booking-bar"><span><strong>{selectedSeats.length} seats</strong><small>{formatMoney(total, event.currency)}</small></span><Button className="primary" disabled={reserve.isPending} onClick={() => reserve.mutate()}>Continue</Button></div>, document.body) : null}
+    {selectedSeats.length ? <MobileBookingBar seatCount={selectedSeats.length} totalLabel={formatMoney(total, event.currency)} pending={reserve.isPending} onContinue={() => reserve.mutate()} /> : null}
   </div>
 }

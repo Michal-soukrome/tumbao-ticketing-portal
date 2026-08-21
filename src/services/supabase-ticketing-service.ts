@@ -9,10 +9,20 @@ function requiredEnv(name: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY') {
 }
 
 class SupabaseTicketingService implements TicketingService {
-  constructor(private readonly client: SupabaseClient) {}
+  private readonly anonymousSessionToken: string
+
+  constructor(private readonly client: SupabaseClient) {
+    const storageKey = 'tumbao:anonymous-session'
+    const existing = localStorage.getItem(storageKey)
+    this.anonymousSessionToken = existing ?? crypto.randomUUID()
+    if (!existing) localStorage.setItem(storageKey, this.anonymousSessionToken)
+  }
 
   private async invoke<T>(functionName: string, body?: Record<string, unknown>): Promise<T> {
-    const { data, error } = await this.client.functions.invoke(functionName, { body })
+    const { data, error } = await this.client.functions.invoke(functionName, {
+      body,
+      headers: { 'x-session-token': this.anonymousSessionToken },
+    })
     if (error) {
       let apiError: AppErrorShape | undefined
       try {

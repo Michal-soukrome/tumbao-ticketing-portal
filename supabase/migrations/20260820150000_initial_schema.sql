@@ -2,7 +2,8 @@
 -- Mutable seat ownership lives only in seat_allocations.
 
 create extension if not exists pgcrypto with schema extensions;
-create extension if not exists pg_cron with schema extensions;
+-- pg_cron owns the dedicated `cron` schema and must not be relocated.
+create extension if not exists pg_cron;
 
 create sequence public.order_seq;
 
