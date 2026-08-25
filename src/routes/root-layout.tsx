@@ -2,22 +2,42 @@ import { Link, Outlet } from "@tanstack/react-router";
 import { ScanLine, Ticket } from "lucide-react";
 import { TestModeBanner } from "../components/test-mode-banner";
 
+const navLinkClass =
+  "flex items-center gap-1.5 text-sm font-medium text-slate-600 transition hover:text-slate-900";
+const navLinkActiveClass = "text-rose-600 hover:text-rose-600";
+
 export function RootLayout() {
   return (
     <>
       <TestModeBanner />
-      <header className="site-header">
-        <Link to="/" className="brand">
-          <Ticket aria-hidden="true" /> <span>Tumbao Tickets</span>
+      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
+        <Link
+          to="/"
+          className="flex items-center gap-2 text-lg font-bold text-slate-900"
+        >
+          <Ticket aria-hidden="true" className="text-rose-500" />{" "}
+          <span>Tumbao Tickets</span>
         </Link>
-        <nav aria-label="Main navigation">
-          <Link to="/" activeProps={{ className: "active" }}>
+        <nav aria-label="Main navigation" className="flex items-center gap-6">
+          <Link
+            to="/"
+            className={navLinkClass}
+            activeProps={{ className: `${navLinkClass} ${navLinkActiveClass}` }}
+          >
             Seats
           </Link>
-          <Link to="/admin" activeProps={{ className: "active" }}>
+          <Link
+            to="/admin"
+            className={navLinkClass}
+            activeProps={{ className: `${navLinkClass} ${navLinkActiveClass}` }}
+          >
             Admin
           </Link>
-          <Link to="/admin/scan" activeProps={{ className: "active" }}>
+          <Link
+            to="/admin/scan"
+            className={navLinkClass}
+            activeProps={{ className: `${navLinkClass} ${navLinkActiveClass}` }}
+          >
             <ScanLine size={17} /> Check-in
           </Link>
         </nav>
@@ -25,7 +45,6 @@ export function RootLayout() {
       <main>
         <Outlet />
       </main>
-      <footer>Official ticket portal · Galavečer Tumbao 2027</footer>
     </>
   );
 }

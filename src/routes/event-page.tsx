@@ -18,6 +18,15 @@ import { HoldCountdown } from "../components/hold-countdown";
 import { SeatMap } from "../components/seat-map";
 import { Button, Card, Notice } from "../components/ui";
 
+// NOTE: This file only converts the markup/classes that live directly in
+// EventPage.tsx. `Button`, `Card`, `Notice`, `SeatMap`, and `HoldCountdown`
+// are separate components I don't have the source for, so I'm assuming they
+// forward a `className` prop onto their root element (e.g. via a `cn()`
+// merge) and passing Tailwind classes into them the same way the original
+// passed custom class names ("primary", "wide", tone props, etc). If those
+// components render their own hard-coded classes internally, they'll need
+// their own Tailwind pass too — happy to do that if you share their source.
+
 function MobileBookingBar({
   seatCount,
   totalLabel,
@@ -51,21 +60,29 @@ function MobileBookingBar({
     <div
       ref={barRef}
       popover={supportsPopover ? "manual" : undefined}
-      className="mobile-booking-bar"
+      className="fixed inset-x-0 bottom-0 z-40 m-0 flex w-full items-center justify-between gap-4 border-t border-slate-200 bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] lg:hidden [&:popover-open]:flex"
     >
-      <span>
-        <strong>
+      <span className="flex flex-col leading-tight">
+        <strong className="text-sm font-semibold text-slate-900">
           {seatCount} {held ? "held " : ""}seat{seatCount === 1 ? "" : "s"}
         </strong>
-        <small>{totalLabel}</small>
+        <small className="text-xs text-slate-500">{totalLabel}</small>
       </span>
-      <div className="mobile-booking-actions">
+      <div className="flex items-center gap-2">
         {held && onChangeSeats ? (
-          <Button disabled={pending} onClick={onChangeSeats}>
+          <Button
+            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
+            disabled={pending}
+            onClick={onChangeSeats}
+          >
             Change seats
           </Button>
         ) : null}
-        <Button className="primary" disabled={pending} onClick={onContinue}>
+        <Button
+          className="rounded-full bg-rose-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600 disabled:opacity-50"
+          disabled={pending}
+          onClick={onContinue}
+        >
           {held ? "Continue checkout" : "Continue"}
         </Button>
       </div>
@@ -190,14 +207,14 @@ export function EventPage() {
 
   if (seatMap.isPending)
     return (
-      <div className="page narrow">
-        <div className="skeleton tall" />
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <div className="h-[520px] animate-pulse rounded-2xl bg-slate-200" />
       </div>
     );
   if (seatMap.isError || !seatMap.data)
     return (
-      <div className="page narrow">
-        <Notice tone="danger">
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <Notice className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Could not load the seating map. Check the backend configuration and
           retry.
         </Notice>
@@ -227,115 +244,142 @@ export function EventPage() {
   };
 
   return (
-    <div className="page">
-      <section className="event-hero">
-        <p className="eyebrow">One night · live in Prague</p>
-        <h1>{event.name}</h1>
-        <div className="event-facts">
-          <span>
-            <CalendarDays size={19} />{" "}
-            {new Intl.DateTimeFormat("en-GB", {
-              dateStyle: "full",
-              timeStyle: "short",
-              timeZone: event.timezone,
-            }).format(new Date(event.eventDate))}
-          </span>
-          <span>
-            <MapPin size={19} /> {event.venue}
-          </span>
-        </div>
-      </section>
-
-      <div className="booking-layout">
-        <div>
-          <div className="map-heading">
+    <div className="p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
+        <div className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="eyebrow">Choose your exact seats</p>
-              <h2>Seating plan</h2>
+              <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">
+                Výběr míst k sezení
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-900">
+                Zasedací plán pro {event.name}
+              </h2>
             </div>
-            <span className="availability">
-              <i /> {seats.filter((seat) => seat.status === "AVAILABLE").length}{" "}
-              available
+
+            <span className="flex items-center gap-2 text-sm font-medium text-emerald-600">
+              <i className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+              {seats.filter((seat) => seat.status === "AVAILABLE").length}{" "}
+              dostupných míst
             </span>
           </div>
-          <SeatMap
-            seats={seats}
-            selected={selected}
-            ownedHeld={ownedHeldIds}
-            selectionLocked={Boolean(heldOrder)}
-            onToggle={toggle}
-          />
-          <div className="legend" aria-label="Seat map legend">
-            <span>
-              <i className="available" />
-              Available
+
+          {/* MAP */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
+            <div className="border-b border-slate-200 bg-white px-5 py-3">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm font-medium text-slate-700">
+                  Vyberte svá místa
+                </span>
+
+                <span className="text-xs text-slate-400">
+                  Klikněte na místo pro jeho výběr
+                </span>
+              </div>
+            </div>
+
+            <div className="min-h-[520px] p-3 sm:p-6 lg:min-h-[650px]">
+              <SeatMap
+                seats={seats}
+                selected={selected}
+                ownedHeld={ownedHeldIds}
+                selectionLocked={Boolean(heldOrder)}
+                onToggle={toggle}
+              />
+            </div>
+          </div>
+
+          {/* LEGEND */}
+          <div
+            className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500 sm:justify-start"
+            aria-label="Seat map legend"
+          >
+            <span className="flex items-center gap-2">
+              <i className="h-2.5 w-2.5 rounded-full border border-slate-300 bg-white" />
+              Dostupné
             </span>
-            <span>
-              <i className="selected" />
-              Selected
+
+            <span className="flex items-center gap-2">
+              <i className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+              Vybrané
             </span>
-            <span>
-              <i className="held" />
-              Held
+
+            <span className="flex items-center gap-2">
+              <i className="h-2.5 w-2.5 rounded-full bg-amber-400" />V držení
             </span>
-            <span>
-              <i className="yours" />
-              Your hold
+
+            <span className="flex items-center gap-2">
+              <i className="h-2.5 w-2.5 rounded-full bg-amber-600" />
+              Vámi držené (čeká na dokončení nákupu)
             </span>
-            <span>
-              <i className="sold" />
-              Sold
+
+            <span className="flex items-center gap-2">
+              <i className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+              Obsazené
             </span>
           </div>
         </div>
 
-        <Card className="selection-summary">
-          <p className="eyebrow">
-            {heldOrder ? "Your held seats" : "Your selection"}
+        {/* BOOKING SUMMARY */}
+        <Card className="sticky top-4 h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6">
+          <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">
+            {heldOrder ? "Vámi držená místa" : "Váš výběr"}
           </p>
-          <h2>
+          <h2 className="mt-1 text-xl font-semibold text-slate-900">
             {activeCredentials && activeOrder.isPending
-              ? "Restoring your hold..."
+              ? "Obnovuje se vaše držení..."
               : cartSeats.length
                 ? `${cartSeats.length} ${heldOrder ? "held " : ""}seat${cartSeats.length === 1 ? "" : "s"}`
-                : "No seats yet"}
+                : "Žádná místa vybrána"}
           </h2>
           {cartSeats.length ? (
-            <ul>
+            <ul className="mt-4 flex flex-col gap-2 text-sm">
               {cartSeats.map((seat) => (
-                <li key={seat.id}>
+                <li
+                  key={seat.id}
+                  className="flex items-center justify-between text-slate-700"
+                >
                   <span>{seatLabel(seat)}</span>
-                  <strong>{formatMoney(seat.priceMinor, seat.currency)}</strong>
+                  <strong className="font-semibold text-slate-900">
+                    {formatMoney(seat.priceMinor, seat.currency)}
+                  </strong>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="muted">
-              Tap any available seat on the plan. You can reserve up to 10.
+            <p className="mt-3 text-sm text-slate-500">
+              Klikněte na libovolné dostupné místo v plánu. Můžete rezervovat až
+              10 míst.
             </p>
           )}
-          <div className="summary-total">
-            <span>Total</span>
-            <strong>{formatMoney(total, event.currency)}</strong>
+          <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
+            <span className="text-sm font-medium text-slate-600">Total</span>
+            <strong className="text-lg font-semibold text-slate-900">
+              {formatMoney(total, event.currency)}
+            </strong>
           </div>
           {heldOrder ? (
-            <Notice tone="warning">
-              These seats are held for this browser session. Complete checkout
-              before the timer expires.
+            <Notice className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Tato místa jsou držena pro tuto relaci prohlížeče. Dokončete nákup
+              před vypršením časovače.
             </Notice>
           ) : null}
           {heldOrder ? (
-            <HoldCountdown
-              expiresAt={heldOrder.expiresAt}
-              onExpired={() => {
-                void activeOrder.refetch();
-                void queryClient.invalidateQueries({ queryKey: ["seat-map"] });
-              }}
-            />
+            <div className="mt-4">
+              <HoldCountdown
+                expiresAt={heldOrder.expiresAt}
+                onExpired={() => {
+                  void activeOrder.refetch();
+                  void queryClient.invalidateQueries({
+                    queryKey: ["seat-map"],
+                  });
+                }}
+              />
+            </div>
           ) : null}
           {heldOrder ? (
             <Button
-              className="wide"
+              className="mt-4 w-full rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
               disabled={changeSeats.isPending}
               onClick={() => changeSeats.mutate()}
             >
@@ -343,27 +387,33 @@ export function EventPage() {
             </Button>
           ) : null}
           {changeSeats.error ? (
-            <Notice tone="danger">
-              The held seats could not be released. Please try again.
+            <Notice className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              Držená místa nemohla být uvolněna. Zkuste to prosím znovu.
             </Notice>
           ) : null}
-          {reserveError ? <Notice tone="danger">{reserveError}</Notice> : null}
+          {reserveError ? (
+            <Notice className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {reserveError}
+            </Notice>
+          ) : null}
           <Button
-            className="primary wide"
+            className="my-4 w-full rounded-full bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={heldOrder ? false : !selected.size || reserve.isPending}
             onClick={continueCheckout}
           >
             {heldOrder
-              ? "Continue checkout"
+              ? "Pokračovat k platbě"
               : reserve.isPending
-                ? "Reserving…"
-                : "Reserve and continue"}
+                ? "Rezervuji..."
+                : "Rezervovat a pokračovat"}
           </Button>
-          <p className="secure-note">
-            <ShieldCheck size={17} /> Seats are held atomically for 10 minutes.
+          <p className="flex items-center gap-2 text-xs text-slate-500">
+            <ShieldCheck size={17} className="shrink-0 text-slate-400" />
+            Místa jsou držena atomicky po dobu 10 minut.
           </p>
         </Card>
       </div>
+
       {cartSeats.length ? (
         <MobileBookingBar
           seatCount={cartSeats.length}

@@ -11,6 +11,10 @@ import { useRuntime } from "../app/runtime-context";
 import type { CheckinResult } from "../domain/models";
 import { Button, Card, Input, Notice } from "../components/ui";
 
+// NOTE: same caveat as the other pages — `Button`, `Card`, `Input`, and
+// `Notice` come from "../components/ui" and I'm assuming they forward
+// `className` (and `tone`, for Notice) onto their root element.
+
 export function ScannerPage() {
   const { service, testMode } = useRuntime();
   const [code, setCode] = useState(testMode ? "TUM-DEMO-001" : "");
@@ -56,60 +60,90 @@ export function ScannerPage() {
       : result?.result === "ALREADY_USED"
         ? "warning"
         : "danger";
+
+  const noticeClass =
+    tone === "success"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : tone === "warning"
+        ? "border-amber-200 bg-amber-50 text-amber-800"
+        : "border-red-200 bg-red-50 text-red-700";
+
   return (
-    <div className="scanner-page">
-      <div className="scanner-shell">
-        <p className="eyebrow">Door staff</p>
-        <h1>Ticket check-in</h1>
-        <Card>
+    <div className="mx-auto max-w-md px-4 py-8">
+      <div className="flex flex-col gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">
+            Door staff
+          </p>
+          <h1 className="mt-1 text-3xl font-bold text-slate-900">
+            Ticket check-in
+          </h1>
+        </div>
+        <Card className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <video
             ref={videoRef}
-            className={scanning ? "scanner-video active" : "scanner-video"}
+            className={
+              scanning
+                ? "aspect-video w-full rounded-xl bg-slate-900 object-cover"
+                : "aspect-video w-full rounded-xl bg-slate-900 object-cover opacity-40"
+            }
             muted
             playsInline
           />
-          <div className="scanner-actions">
+          <div className="mt-4">
             <Button
-              className={scanning ? "" : "primary"}
+              className={
+                scanning
+                  ? "flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  : "flex w-full items-center justify-center gap-2 rounded-full bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600"
+              }
               onClick={scanning ? stopCamera : startCamera}
             >
               {scanning ? <StopCircle size={18} /> : <Camera size={18} />}
               {scanning ? "Stop camera" : "Scan QR with camera"}
             </Button>
           </div>
-          <div className="divider">
+          <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
+            <span className="h-px flex-1 bg-slate-200" />
             <span>or enter a ticket code</span>
+            <span className="h-px flex-1 bg-slate-200" />
           </div>
           <form
             onSubmit={(event) => {
               event.preventDefault();
               void validate();
             }}
-            className="manual-code"
+            className="flex items-center gap-2"
           >
             <Input
+              className="min-w-0 flex-1 rounded-full border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-100"
               value={code}
               onChange={(event) => setCode(event.target.value)}
               placeholder="TUM-00001-1 or QR token"
               autoCapitalize="off"
             />
-            <Button type="submit">
+            <Button
+              className="flex shrink-0 items-center gap-2 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+              type="submit"
+            >
               <Search size={18} /> Validate
             </Button>
           </form>
         </Card>
         {result ? (
-          <Notice tone={tone}>
-            <div className="scan-result">
+          <Notice className={`rounded-xl border px-4 py-3 ${noticeClass}`}>
+            <div className="flex items-start gap-3">
               {result.result === "CHECKED_IN" ? (
-                <CheckCircle2 size={32} />
+                <CheckCircle2 size={32} className="shrink-0" />
               ) : (
-                <XCircle size={32} />
+                <XCircle size={32} className="shrink-0" />
               )}
-              <div>
-                <strong>{result.result.replace("_", " ")}</strong>
+              <div className="flex flex-col">
+                <strong className="text-sm font-semibold uppercase tracking-wide">
+                  {result.result.replace("_", " ")}
+                </strong>
                 {"ticket" in result ? (
-                  <span>
+                  <span className="mt-1 text-sm">
                     {result.ticket.ticketCode} · Section{" "}
                     {result.ticket.seat.section}, row{" "}
                     {result.ticket.seat.rowLabel}, seat{" "}
@@ -119,7 +153,7 @@ export function ScannerPage() {
                       : ""}
                   </span>
                 ) : (
-                  <span>No matching ticket.</span>
+                  <span className="mt-1 text-sm">No matching ticket.</span>
                 )}
               </div>
             </div>

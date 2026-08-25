@@ -17,6 +17,13 @@ import {
 } from "../components/ui";
 import { AppError, formatMoney, seatLabel } from "../domain/models";
 
+// NOTE: same caveat as the other pages — `Button`, `Card`, `EmptyState`,
+// `Field`, `Input`, and `Notice` come from "../components/ui" and I'm
+// assuming they forward `className` onto their root element. `Field` and
+// `Input` weren't given any custom classes in the original either, so I've
+// left them as-is; if their internals need Tailwind too, send the source
+// over.
+
 const customerSchema = z.object({
   name: z.string().trim().min(2, "Enter your full name."),
   email: z.email("Enter a valid email address."),
@@ -60,10 +67,15 @@ export function CheckoutPage({ orderId }: { orderId: string }) {
 
   if (!credentials)
     return (
-      <div className="page narrow">
+      <div className="mx-auto max-w-md px-4 py-8">
         <EmptyState title="Order access is missing">
-          <p>Return to the seating map and make a new reservation.</p>
-          <Link to="/" className="text-link">
+          <p className="text-sm text-slate-600">
+            Return to the seating map and make a new reservation.
+          </p>
+          <Link
+            to="/"
+            className="mt-2 inline-block text-sm font-medium text-rose-600 hover:text-rose-700 hover:underline"
+          >
             Choose seats
           </Link>
         </EmptyState>
@@ -71,21 +83,27 @@ export function CheckoutPage({ orderId }: { orderId: string }) {
     );
   if (order.isPending)
     return (
-      <div className="page narrow">
-        <div className="skeleton tall" />
+      <div className="mx-auto max-w-md px-4 py-8">
+        <div className="h-[520px] animate-pulse rounded-2xl bg-slate-200" />
       </div>
     );
   if (order.isError || !order.data)
     return (
-      <div className="page narrow">
-        <Notice tone="danger">This order could not be loaded.</Notice>
+      <div className="mx-auto max-w-md px-4 py-8">
+        <Notice className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          This order could not be loaded.
+        </Notice>
       </div>
     );
   if (order.data.status !== "PENDING")
     return (
-      <div className="page narrow">
+      <div className="mx-auto max-w-md px-4 py-8">
         <EmptyState title={`Order ${order.data.status.toLowerCase()}`}>
-          <Link to="/order/$orderId" params={{ orderId }} className="text-link">
+          <Link
+            to="/order/$orderId"
+            params={{ orderId }}
+            className="mt-2 inline-block text-sm font-medium text-rose-600 hover:text-rose-700 hover:underline"
+          >
             View order status
           </Link>
         </EmptyState>
@@ -98,23 +116,28 @@ export function CheckoutPage({ orderId }: { orderId: string }) {
       : submit.error
         ? "Payment could not be started."
         : null;
+
   return (
-    <div className="page checkout-page">
-      <div className="checkout-title">
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="eyebrow">Checkout · {order.data.orderNumber}</p>
-          <h1>Your details</h1>
+          <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">
+            Checkout · {order.data.orderNumber}
+          </p>
+          <h1 className="mt-1 text-3xl font-bold text-slate-900">
+            Your details
+          </h1>
         </div>
         <HoldCountdown
           expiresAt={order.data.expiresAt}
           onExpired={() => void order.refetch()}
         />
       </div>
-      <div className="checkout-layout">
-        <Card>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
+        <Card className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <form
             onSubmit={form.handleSubmit((values) => submit.mutate(values))}
-            className="form-grid"
+            className="flex flex-col gap-4"
           >
             <Field
               label="Full name"
@@ -139,9 +162,11 @@ export function CheckoutPage({ orderId }: { orderId: string }) {
                 {...form.register("phone")}
               />
             </Field>
-            <details className="billing-fields">
-              <summary>Company billing details (optional)</summary>
-              <div className="form-grid compact">
+            <details className="group rounded-xl border border-slate-200 px-4 py-3">
+              <summary className="cursor-pointer text-sm font-medium text-slate-700 marker:content-none">
+                Company billing details (optional)
+              </summary>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Company">
                   <Input {...form.register("billingCompany")} />
                 </Field>
@@ -151,19 +176,23 @@ export function CheckoutPage({ orderId }: { orderId: string }) {
               </div>
             </details>
             {testMode ? (
-              <Notice tone="warning">
+              <Notice className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 Test payment is local. The Pay button immediately finalizes this
                 order and creates tickets.
               </Notice>
             ) : (
-              <Notice>
-                <LockKeyhole size={17} /> You will continue to the payment
-                provider’s secure hosted page.
+              <Notice className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <LockKeyhole size={17} className="shrink-0 text-slate-400" />{" "}
+                You will continue to the payment provider’s secure hosted page.
               </Notice>
             )}
-            {error ? <Notice tone="danger">{error}</Notice> : null}
+            {error ? (
+              <Notice className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </Notice>
+            ) : null}
             <Button
-              className="primary wide large"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-rose-500 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
               type="submit"
               disabled={submit.isPending}
             >
@@ -176,20 +205,29 @@ export function CheckoutPage({ orderId }: { orderId: string }) {
             </Button>
           </form>
         </Card>
-        <Card className="order-summary">
-          <p className="eyebrow">Reserved seats</p>
-          <h2>{order.data.seats.length} tickets</h2>
-          <ul>
+        <Card className="sticky top-4 h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">
+            Reserved seats
+          </p>
+          <h2 className="mt-1 text-xl font-semibold text-slate-900">
+            {order.data.seats.length} tickets
+          </h2>
+          <ul className="mt-4 flex flex-col gap-2 text-sm">
             {order.data.seats.map((seat) => (
-              <li key={seat.id}>
+              <li
+                key={seat.id}
+                className="flex items-center justify-between text-slate-700"
+              >
                 <span>{seatLabel(seat)}</span>
-                <strong>{formatMoney(seat.priceMinor, seat.currency)}</strong>
+                <strong className="font-semibold text-slate-900">
+                  {formatMoney(seat.priceMinor, seat.currency)}
+                </strong>
               </li>
             ))}
           </ul>
-          <div className="summary-total">
-            <span>Total</span>
-            <strong>
+          <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
+            <span className="text-sm font-medium text-slate-600">Total</span>
+            <strong className="text-lg font-semibold text-slate-900">
               {formatMoney(order.data.totalMinor, order.data.currency)}
             </strong>
           </div>

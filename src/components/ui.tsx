@@ -35,10 +35,14 @@ export function Badge({
 
 export function Notice({
   tone = "info",
+  className = "",
   children,
-}: PropsWithChildren<{ tone?: "info" | "success" | "warning" | "danger" }>) {
+}: PropsWithChildren<{
+  tone?: "info" | "success" | "warning" | "danger";
+  className?: string;
+}>) {
   return (
-    <div className={`notice notice-${tone}`} role="status">
+    <div className={`notice notice-${tone} ${className}`} role="status">
       {children}
     </div>
   );
