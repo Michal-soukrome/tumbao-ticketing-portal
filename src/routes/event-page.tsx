@@ -60,7 +60,7 @@ function MobileBookingBar({
     <div
       ref={barRef}
       popover={supportsPopover ? "manual" : undefined}
-      className="fixed inset-x-0 bottom-0 z-40 m-0 flex w-full items-center justify-between gap-4 border-t border-slate-200 bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] lg:hidden [&:popover-open]:flex"
+      className="fixed bottom-5 left-1/2 z-40 m-0 flex w-[calc(100%-2rem)] max-w-[70%] -translate-x-1/2 items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_30px_rgba(15,23,42,0.12)] lg:hidden [&:popover-open]:flex"
     >
       <span className="flex flex-col leading-tight">
         <strong className="text-sm font-semibold text-slate-900">
@@ -68,6 +68,7 @@ function MobileBookingBar({
         </strong>
         <small className="text-xs text-slate-500">{totalLabel}</small>
       </span>
+
       <div className="flex items-center gap-2">
         {held && onChangeSeats ? (
           <Button
@@ -78,6 +79,7 @@ function MobileBookingBar({
             Change seats
           </Button>
         ) : null}
+
         <Button
           className="rounded-full bg-rose-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600 disabled:opacity-50"
           disabled={pending}
@@ -247,35 +249,53 @@ export function EventPage() {
     <div className="p-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
         <div className="min-w-0">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">
-                Výběr míst k sezení
-              </p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-900">
-                Zasedací plán pro {event.name}
-              </h2>
-            </div>
-
-            <span className="flex items-center gap-2 text-sm font-medium text-emerald-600">
-              <i className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-              {seats.filter((seat) => seat.status === "AVAILABLE").length}{" "}
-              dostupných míst
-            </span>
-          </div>
-
           {/* MAP */}
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
-            <div className="border-b border-slate-200 bg-white px-5 py-3">
+            <div className=" bg-white px-5 py-3">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-sm font-medium text-slate-700">
                   Vyberte svá místa
+                  <span className="flex items-center gap-2 text-sm font-medium text-emerald-600">
+                    <i className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                    {seats.filter((seat) => seat.status === "AVAILABLE").length}{" "}
+                    dostupných míst
+                  </span>
                 </span>
 
                 <span className="text-xs text-slate-400">
                   Klikněte na místo pro jeho výběr
                 </span>
               </div>
+            </div>
+
+            {/* LEGEND */}
+            <div
+              className="border-b border-slate-200 px-5 py-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500 bg-white sm:justify-start"
+              aria-label="Seat map legend"
+            >
+              <span className="flex items-center gap-2">
+                <i className="h-2.5 w-2.5 rounded-full border border-slate-300 bg-white" />
+                Dostupné
+              </span>
+
+              <span className="flex items-center gap-2">
+                <i className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+                Vybrané
+              </span>
+
+              <span className="flex items-center gap-2">
+                <i className="h-2.5 w-2.5 rounded-full bg-amber-400" />V držení
+              </span>
+
+              <span className="flex items-center gap-2">
+                <i className="h-2.5 w-2.5 rounded-full bg-amber-600" />
+                Vámi držené (čeká na dokončení nákupu)
+              </span>
+
+              <span className="flex items-center gap-2">
+                <i className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                Obsazené
+              </span>
             </div>
 
             <div className="min-h-[520px] p-3 sm:p-6 lg:min-h-[650px]">
@@ -287,36 +307,6 @@ export function EventPage() {
                 onToggle={toggle}
               />
             </div>
-          </div>
-
-          {/* LEGEND */}
-          <div
-            className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500 sm:justify-start"
-            aria-label="Seat map legend"
-          >
-            <span className="flex items-center gap-2">
-              <i className="h-2.5 w-2.5 rounded-full border border-slate-300 bg-white" />
-              Dostupné
-            </span>
-
-            <span className="flex items-center gap-2">
-              <i className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-              Vybrané
-            </span>
-
-            <span className="flex items-center gap-2">
-              <i className="h-2.5 w-2.5 rounded-full bg-amber-400" />V držení
-            </span>
-
-            <span className="flex items-center gap-2">
-              <i className="h-2.5 w-2.5 rounded-full bg-amber-600" />
-              Vámi držené (čeká na dokončení nákupu)
-            </span>
-
-            <span className="flex items-center gap-2">
-              <i className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-              Obsazené
-            </span>
           </div>
         </div>
 

@@ -218,7 +218,7 @@ export function SeatMap({
   };
 
   return (
-    <div className="relative isolate mt-5 overflow-hidden rounded-2xl border border-[#deddd7] bg-white shadow-[0_12px_32px_rgba(25,30,50,0.05)]">
+    <div className="relative isolate overflow-hidden rounded-2xl border border-[#deddd7] bg-white shadow-[0_12px_32px_rgba(25,30,50,0.05)]">
       <div
         className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-lg border border-[#deddd7] bg-white/92 p-1 shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
         aria-label="Map controls"

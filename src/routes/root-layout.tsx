@@ -15,8 +15,7 @@ export function RootLayout() {
           to="/"
           className="flex items-center gap-2 text-lg font-bold text-slate-900"
         >
-          <Ticket aria-hidden="true" className="text-rose-500" />{" "}
-          <span>Tumbao Tickets</span>
+          <span>Galavečer Tumbao 2027</span>
         </Link>
         <nav aria-label="Main navigation" className="flex items-center gap-6">
           <Link
@@ -24,21 +23,21 @@ export function RootLayout() {
             className={navLinkClass}
             activeProps={{ className: `${navLinkClass} ${navLinkActiveClass}` }}
           >
-            Seats
+            Vstupenky
           </Link>
           <Link
             to="/admin"
             className={navLinkClass}
             activeProps={{ className: `${navLinkClass} ${navLinkActiveClass}` }}
           >
-            Admin
+            Administrace
           </Link>
           <Link
             to="/admin/scan"
             className={navLinkClass}
             activeProps={{ className: `${navLinkClass} ${navLinkActiveClass}` }}
           >
-            <ScanLine size={17} /> Check-in
+            <ScanLine size={17} /> Ověření vstupu
           </Link>
         </nav>
       </header>

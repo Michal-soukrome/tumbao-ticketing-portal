@@ -73,10 +73,10 @@ export function ScannerPage() {
       <div className="flex flex-col gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">
-            Door staff
+            Personál u vstupu
           </p>
           <h1 className="mt-1 text-3xl font-bold text-slate-900">
-            Ticket check-in
+            Kontrola vstupenek
           </h1>
         </div>
         <Card className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -100,12 +100,12 @@ export function ScannerPage() {
               onClick={scanning ? stopCamera : startCamera}
             >
               {scanning ? <StopCircle size={18} /> : <Camera size={18} />}
-              {scanning ? "Stop camera" : "Scan QR with camera"}
+              {scanning ? "Vypnout kameru" : "Skenovat QR kód kamerou"}
             </Button>
           </div>
           <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
             <span className="h-px flex-1 bg-slate-200" />
-            <span>or enter a ticket code</span>
+            <span>nebo zadejte kód vstupenky</span>
             <span className="h-px flex-1 bg-slate-200" />
           </div>
           <form
@@ -126,7 +126,7 @@ export function ScannerPage() {
               className="flex shrink-0 items-center gap-2 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
               type="submit"
             >
-              <Search size={18} /> Validate
+              <Search size={18} /> Ověřit
             </Button>
           </form>
         </Card>
@@ -144,16 +144,19 @@ export function ScannerPage() {
                 </strong>
                 {"ticket" in result ? (
                   <span className="mt-1 text-sm">
-                    {result.ticket.ticketCode} · Section{" "}
-                    {result.ticket.seat.section}, row{" "}
-                    {result.ticket.seat.rowLabel}, seat{" "}
+                    {result.ticket.ticketCode} · Sekce{" "}
+                    {result.ticket.seat.section}, řada{" "}
+                    {result.ticket.seat.rowLabel}, sedadlo{" "}
                     {result.ticket.seat.seatNumber}
                     {result.ticket.checkedInAt
                       ? ` · ${new Date(result.ticket.checkedInAt).toLocaleTimeString()}`
                       : ""}
                   </span>
                 ) : (
-                  <span className="mt-1 text-sm">No matching ticket.</span>
+                  <span className="mt-1 text-sm">
+                    Vstupenka nenalezena nebo je neplatná. Zkontrolujte kód a
+                    zkuste to znovu.
+                  </span>
                 )}
               </div>
             </div>
