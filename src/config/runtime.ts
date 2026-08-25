@@ -1,4 +1,4 @@
-import { ServiceRuntime } from "../services/ticketing-service";
+import type { ServiceRuntime } from "../services/ticketing-service";
 
 const requestedTestMode = import.meta.env.VITE_TEST_MODE === "true";
 
@@ -10,13 +10,23 @@ export async function createServiceRuntime(): Promise<ServiceRuntime> {
 
   if (requestedTestMode) {
     console.log("Using MOCK runtime");
+
     const { createMockRuntime } =
       await import("../test-mode/mock-ticketing-service");
-    return createMockRuntime();
+
+    console.log("Mock module imported");
+
+    const runtime = createMockRuntime();
+
+    console.log("Mock runtime created:", runtime);
+
+    return runtime;
   }
 
   console.log("Using SUPABASE runtime");
+
   const { createSupabaseRuntime } =
     await import("../services/supabase-ticketing-service");
+
   return createSupabaseRuntime();
 }
