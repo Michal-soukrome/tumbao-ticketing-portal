@@ -1,301 +1,903 @@
-Build a production-ready ticketing web app for a single event.
+# Production Build Brief — Galavečer Tumbao 2027 Ticketing
+
+Build a production-ready ticketing web app for one event.
 
 ## PROJECT
 
-Event: Galavečer tumbao 2027
-Date: 29 May 2027
-Venue: GoJa Music Hall, Prague
-The app will run on a dedicated subdomain, e.g. tickets.tumbao.cz.
+Event: **Galavečer Tumbao 2027**  
+Date: **29 May 2027**  
+Venue: **GoJa Music Hall, Prague**  
+Production host: **tickets.tumbao.cz** (or the final dedicated ticketing subdomain)
 
-The application is for ONE event only. Do not build a generic multi-tenant ticketing platform.
+This application is for **ONE event only**. Do not build a generic multi-tenant ticketing platform, organizer marketplace or reusable event CMS unless requirements change later.
 
-## GOAL
+The database and payment code must be designed as real-money production infrastructure, not a demo.
 
-Users must be able to:
+---
 
-1. See an interactive seating map of the venue.
-2. See which seats are available, temporarily reserved, or sold.
-3. Select one or more specific seats.
-4. See the total price immediately.
-5. Enter their contact/billing information.
-6. Pay online.
-7. Receive a confirmation email containing their purchased seats and unique QR code ticket(s).
-8. Show the QR code on their phone or print the ticket.
-9. An administrator must be able to see orders and ticket status and validate tickets at the venue.
+## PRIMARY USER FLOW
 
-IMPORTANT:
-The system must NEVER allow two customers to purchase the same seat.
+A customer must be able to:
 
-## TECH STACK
+1. Open the event page and understand the event/date/venue/pricing.
+2. Use an interactive venue seating map.
+3. See each seat as available, held or sold.
+4. Select one or more specific seats.
+5. See selected seats and total price immediately.
+6. Reserve the seats atomically for a limited time.
+7. See a server-derived reservation countdown.
+8. Enter required contact/billing information.
+9. Pay on the selected payment provider's hosted checkout.
+10. Return to the site and see processing/confirmed status based only on server-known state.
+11. Receive confirmation email after verified payment.
+12. Access one unique QR ticket per purchased seat.
+13. Show the QR ticket on a phone or use a printable ticket view.
 
-Frontend:
+Staff must be able to:
+
+1. Authenticate securely.
+2. See event/order/ticket information allowed by their role.
+3. Search orders and tickets.
+4. Handle refunds/cancellations where allowed.
+5. Scan and validate QR tickets at the venue.
+6. Check a valid ticket in exactly once.
+7. See a clear already-used/void/invalid result on subsequent scans.
+
+### Non-negotiable inventory invariant
+
+**Two customers must never own or purchase the same seat.**
+
+Frontend state, Realtime messages, cron cadence and payment redirects must not be required for that guarantee. PostgreSQL transaction/constraint logic must enforce it.
+
+---
+
+## CHOSEN TECH STACK
+
+### Frontend
+
+Use:
 
 - React
 - TypeScript
 - Vite
-- Tailwind CSS
+- Tailwind CSS 4
+- TanStack Router
+- TanStack Query
+- shadcn/ui using Base UI primitives for a new project
+- React Hook Form
+- Zod
+- TanStack Table for admin tables
+- Lucide icons
+- small SVG pan/zoom library such as `@panzoom/panzoom`
+- `@zxing/browser` for QR camera scanning
 
-Backend:
+Do not introduce Next.js or another server framework for v1. Supabase remains the application backend/security boundary.
+
+Do not introduce Redux/Zustand by default. Add a global state library only if implementation exposes a real need that local state + route state + TanStack Query cannot handle cleanly.
+
+### Backend
 
 - Supabase
 - PostgreSQL
-- Supabase Edge Functions where appropriate
+- Supabase Auth for staff accounts
+- Supabase Edge Functions for public/admin API boundaries and provider integrations
+- Supabase Realtime Broadcast for seat-state deltas in production
+- `pg_cron` for scheduled expiry/outbox work where appropriate
 
-Email:
+### Email
 
 - Resend
+- transactional outbox pattern; do not make successful ticket creation depend on an immediate Resend request succeeding
 
-QR:
+### Payments
 
-- Generate unique QR codes for every ticket.
+- Design a provider adapter and implement **one** Czech provider first: GoPay or Comgate.
+- Use the provider's hosted payment UI; card data must not touch this application.
+- Do not treat a frontend success/return redirect as proof of payment.
+- Verify payment server-side through the provider's current supported webhook/status mechanism.
+- Payment finalization must be idempotent.
+- Support multiple payment attempts for one order.
 
-Payments:
+### Testing/operations
 
-- Design the payment layer so it can be connected to a Czech payment provider such as GoPay or Comgate.
-- Do not treat the frontend payment success redirect as proof of payment.
-- Payment confirmation must happen through a server-side webhook.
+- Vitest + Testing Library
+- Playwright
+- automated database concurrency/integration tests
+- load test reservation/realtime behavior before launch
+- production error monitoring such as Sentry or equivalent
 
-## DATABASE
+---
 
-Design a proper relational schema.
+## FRONTEND / UI REQUIREMENTS
 
-At minimum:
+The design should be clean, modern, minimal and event-focused.
 
-events
+The seating map is the primary UI element. Do not bury it inside a dashboard shell.
+
+### Desktop
+
+- map takes most of the usable viewport;
+- sticky selected-seat/price summary at the side;
+- clear stage/venue orientation;
+- checkout CTA visible once seats are selected.
+
+### Mobile
+
+- map remains large enough to pan/zoom comfortably;
+- sticky bottom selection/price/continue bar;
+- selected-seat details can expand in a bottom sheet/dialog;
+- preserve map position while opening/closing UI;
+- touch targets must be practical on a phone.
+
+### Visual seat states
+
+Distinguish:
+
+- AVAILABLE
+- HELD
+- SOLD
+- SELECTED
+
+Do not rely only on color. Use outline/fill/pattern/icon changes plus accessible labels/focus states.
+
+### Accessibility
+
+Each interactive seat must expose meaningful information such as section, row, seat number, price and availability. Keyboard/focus behavior must be usable where practical. Forms require proper labels, errors and focus management.
+
+### Avoid
+
+- unnecessary 3D effects;
+- motion-heavy transitions;
+- ornamental analytics cards in the customer flow;
+- excessive modals;
+- hiding total price until the last step;
+- custom UI primitives where the selected component library already provides accessible versions.
+
+---
+
+## SEATING MAP
+
+The map must be **data-driven SVG**, not one hardcoded image and not hundreds of independently hardcoded DOM coordinates in JSX.
+
+Every seat requires:
+
+- unique ID;
+- event ID;
+- section;
+- row label;
+- seat number;
+- price category;
+- x/y rendering coordinates;
+- optional rotation/layout metadata where the real map requires it.
+
+Static seat geometry belongs in `seats`. Current reservation/sale ownership does not.
+
+Use a stable SVG `viewBox` and a small pan/zoom implementation. The application must remain usable on desktop and mobile.
+
+---
+
+## DATABASE MODEL
+
+Use a relational schema with at least:
+
+### `events`
 
 - id
 - name
-- date
+- event_date
 - venue
+- timezone
+- sales_open_at
+- sales_close_at
 - created_at
 
-seats
+### `price_categories`
+
+- id
+- event_id
+- name
+- price_minor
+- currency
+- sort_order
+
+Money is stored as integer minor units according to the payment-provider adapter's currency convention. Never accept a browser-provided charge amount.
+
+### `seats`
+
+Static physical inventory only:
 
 - id
 - event_id
 - section
-- row
+- row_label
 - seat_number
-- price_category
-- price
-- status
+- price_category_id
+- pos_x
+- pos_y
+- optional rotation/accessibility metadata
+- is_active
 
-orders
+Do **not** store `held_by_session` as the current inventory authority on `seats`.
+
+### `orders`
 
 - id
 - event_id
-- customer_name
-- customer_email
-- customer_phone
-- total_price
+- order_number
+- session_id_hash
+- access_token_hash
+- customer/contact/billing fields actually required
+- total_minor
+- currency
 - status
-- payment_status
 - created_at
 - expires_at
+- paid_at
+- cancelled_at
 
-order_seats
+Order status must support at least:
+
+- PENDING
+- PAID
+- EXPIRED
+- CANCELLED
+- RECONCILIATION_REQUIRED
+
+### `order_seats`
+
+Immutable price/history snapshot:
 
 - order_id
 - seat_id
-- price
+- price_category_name
+- price_minor
+- currency
 
-tickets
+Historical rows do not mean the order currently owns the seat.
+
+### `seat_allocations`
+
+This is the current inventory authority:
+
+- seat_id **PRIMARY KEY**
+- order_id
+- status = HELD | SOLD
+- hold_expires_at (required only for HELD)
+- timestamps
+
+Interpretation:
+
+- no allocation row = AVAILABLE;
+- HELD allocation = temporarily reserved;
+- SOLD allocation = purchased.
+
+`seat_id` being unique/primary-key is a database backstop against two current owners.
+
+### `payment_attempts`
+
+- id
+- order_id
+- provider
+- status
+- amount_minor
+- currency
+- idempotency_key
+- provider_ref
+- provider_status
+- redirect_url
+- failure information
+- timestamps
+
+Allow multiple attempts per order.
+
+### `payment_events`
+
+Used for webhook deduplication/audit:
+
+- provider
+- provider_event_id
+- payment_attempt_id
+- received_at
+- processed_at
+- payload_hash/minimal metadata
+
+Provider + provider_event_id must be unique.
+
+### `tickets`
 
 - id
 - order_id
 - seat_id
 - ticket_code
 - qr_token
-- status
+- status = VALID | CHECKED_IN | VOID
 - checked_in_at
+- checked_in_by
+- voided_at
+- created_at
 
-price_categories
+Only one active VALID/CHECKED_IN ticket may exist for a seat. A VOID historical ticket must not prevent a legitimate resale/new ticket.
+
+### `refunds`
 
 - id
-- name
-- price
+- order_id
+- payment_attempt_id
+- provider/ref
+- amount_minor
+- currency
+- status
+- reason
+- requested_by
+- timestamps
 
-## SEAT STATES
+### `email_outbox`
 
-A seat can be:
+- id
+- kind
+- dedupe_key UNIQUE
+- order_id
+- recipient
+- payload
+- status
+- attempts
+- next_attempt_at
+- last_error
+- timestamps
 
-AVAILABLE
-HELD
-SOLD
+### `admin_users`
 
-HELD seats must automatically expire after e.g. 10 minutes if payment has not been completed.
+Backed by Supabase Auth:
 
-The expiration must be enforced server-side.
+- id -> auth.users.id
+- full_name
+- role = ADMIN | SCANNER
+- is_active
+- created_at
+
+### `admin_audit_log`
+
+Record privileged actions such as refund, cancel, resend, void/check-in and sensitive operational actions.
+
+---
 
 ## RESERVATION LOGIC
 
-This is the most important part of the application.
+This is the most important part of the system.
 
-Never rely on React state to determine whether a seat is available.
+Public call conceptually:
 
-Implement an atomic server-side reservation operation.
+`reserveSeats(eventId, seatIds)`
 
-Example:
+The browser does not choose hold duration and does not send authoritative prices.
 
-reserveSeats(seatIds, sessionId)
+### Required server validation
 
-Requirements:
+- event exists and is on sale;
+- seat IDs are unique;
+- seat count is between 1 and the configured purchase maximum;
+- all seats belong to the event and are active;
+- rate limit passes.
 
-- Check all requested seats in a database transaction.
-- If ANY requested seat is already HELD or SOLD, reject the entire reservation.
-- If all are available, lock all seats atomically.
-- Create an order with status = PENDING.
-- Set expires_at = current time + 10 minutes.
-- Return the order ID and expiration timestamp.
+### Required database transaction
 
-Two users attempting to reserve the same seat at the same time must never both succeed.
+1. Lock all requested static `seats` rows in stable ID order.
+2. Remove/reclaim expired HELD allocations for those seats.
+3. Re-check current `seat_allocations` after the locks are held.
+4. If **ANY** requested seat still has a HELD or SOLD allocation, reject the entire reservation.
+5. Read authoritative prices from `price_categories`.
+6. Create one PENDING order with server-generated expiry and order number.
+7. Snapshot lines into `order_seats`.
+8. Insert HELD `seat_allocations` for every selected seat.
+9. Commit atomically.
+10. Return order ID, order access token, expiration and sanitized summary.
 
-## PAYMENT FLOW
+No partial reservation is allowed.
 
-1. User selects seats.
-2. Seats become HELD.
-3. Pending order is created.
-4. User proceeds to payment.
-5. Payment provider processes payment.
-6. Server receives payment webhook.
-7. Server verifies the payment.
-8. If payment is successful:
-   - order = PAID
-   - seats = SOLD
-   - tickets are generated
-   - confirmation email is sent
-9. If payment fails or reservation expires:
-   - order = CANCELLED / EXPIRED
-   - seats return to AVAILABLE
+Two requests targeting the same seat must serialize on the database seat row. Exactly one may commit an allocation.
 
-Do not mark an order as paid based only on a frontend redirect.
+### Transaction function security
 
-## SEATING MAP
+Privileged Postgres functions must use safe `SECURITY DEFINER` practices:
 
-The seating map must be data-driven, not hardcoded as one image.
+- fixed search path;
+- schema-qualified objects;
+- restricted execute grants;
+- internal input validation;
+- invoked from service-role Edge Functions, not directly by anonymous browser RPC calls.
 
-The venue map will contain multiple sections, rows and individual seats.
+---
 
-Each seat must have:
+## HOLD EXPIRY
 
-- unique ID
-- section
-- row
-- seat number
-- price category
-- coordinates/position for rendering
+Default business assumption: 10-minute reservation window until confirmed otherwise.
 
-The UI should visually distinguish:
+Expiration is server-side.
 
-AVAILABLE
-HELD
-SOLD
-SELECTED
+Use both:
 
-Users can click individual seats.
+- lazy reclaim in reservation logic for expired HELD allocations;
+- scheduled `pg_cron` sweep roughly every 30 seconds that marks expired PENDING orders EXPIRED and removes their HELD allocations.
 
-Display a legend.
+The frontend countdown is cosmetic/UX only and is derived from server expiry.
 
-Display selected seats and total price next to/below the seating map.
+When countdown ends, payment actions are disabled and authoritative status is re-fetched. React must never release inventory by itself.
 
-The seating map must work well on desktop and mobile.
+---
 
-## ADMIN
+## PAYMENT CREATION
 
-Create a protected admin area.
+When the customer chooses Pay:
 
-Admin should be able to:
+1. validate order ID + public access token;
+2. require order PENDING and not expired;
+3. confirm every ordered seat is still HELD by that order;
+4. read amount/currency from the database;
+5. create/reuse a local payment attempt with an idempotency key;
+6. create provider payment session;
+7. store provider reference/redirect URL;
+8. redirect browser to hosted payment page.
 
-- View event statistics.
-- See total seats.
-- See available / held / sold seats.
-- View orders.
-- Search orders by customer email/name/order ID.
-- View individual tickets.
-- Manually cancel/refund an order if necessary.
-- Validate a ticket using QR code.
-- Mark a ticket as CHECKED_IN.
+If provider creation times out ambiguously, reconcile/retry with the same idempotency strategy where supported. Do not blindly create another charge.
 
-QR validation must be server-side.
+---
 
-A valid ticket can only be checked in once.
+## PAYMENT WEBHOOK / FINALIZATION
 
-If the same QR code is scanned twice, the second attempt must clearly show that the ticket has already been used.
+A successful frontend return URL is **never** a payment state transition.
 
-## SECURITY
+The webhook Edge Function must:
 
-Treat the application as a real payment/ticketing system.
+1. authenticate/verify the callback using the chosen provider's current production method;
+2. independently query authoritative payment state where supported/required;
+3. verify provider reference;
+4. verify paid amount and currency against the local order/payment attempt;
+5. deduplicate provider events;
+6. call one database `finalize_payment()` transaction.
 
-Requirements:
+### Valid finalization
 
-- Never trust client-side seat availability.
-- Never trust client-side prices.
-- Never trust frontend payment status.
-- Validate all input server-side.
-- Use Supabase Row Level Security where appropriate.
-- Do not expose service-role keys to the browser.
-- Payment webhooks must be authenticated/verified according to the provider's mechanism.
-- QR tokens must be cryptographically random and impossible to guess.
-- Admin routes must be protected.
-- Rate-limit sensitive endpoints where appropriate.
+The transaction must lock payment attempt, order and relevant seats/allocations.
+
+If the order is already PAID, return idempotently.
+
+If it is still payable and **every ordered seat is still HELD by this exact order**:
+
+- payment attempt = PAID;
+- order = PAID;
+- allocations HELD -> SOLD;
+- create unique ticket per seat;
+- create one confirmation `email_outbox` row with a deterministic dedupe key;
+- commit.
+
+### Critical late-payment rule
+
+If payment is verified as successful after the reservation expired:
+
+- if **all ordered seats are currently unallocated**, the locked finalization transaction may reacquire those exact seats directly as SOLD and honor the payment;
+- if **any ordered seat belongs to another order**, do not overwrite it.
+
+For an inventory conflict:
+
+- payment attempt = RECONCILIATION_REQUIRED;
+- order = RECONCILIATION_REQUIRED;
+- no tickets created;
+- current seat allocations untouched;
+- alert/audit entry created;
+- initiate/queue refund reconciliation according to provider capability.
+
+Both late-payment cases must have automated integration tests.
+
+---
+
+## PAYMENT / ORDER RETURN PAGE
+
+The customer return route uses `order_id + access_token` and polls/refetches server state.
+
+Possible UI:
+
+- `Processing payment…`
+- `Payment confirmed`
+- `Payment failed`
+- `Reservation expired`
+- `Payment received, support is resolving your order` for rare reconciliation cases
+
+Never inspect query parameters such as `success=true` to decide payment success.
+
+---
+
+## TICKETS AND QR TOKENS
+
+Generate one ticket per purchased seat only after server-confirmed payment finalization.
+
+Keep two identifiers:
+
+- short human-friendly `ticket_code`;
+- high-entropy random QR bearer token.
+
+Store the QR bearer token as a protected high-entropy secret so an existing ticket can be rendered/resend without regenerating it. Never expose it through broad table reads or logs.
+
+The QR must not encode customer PII, sequential ticket IDs or predictable data.
+
+Default v1 delivery:
+
+- QR code(s) in confirmation email;
+- secure web ticket/order page;
+- printable web stylesheet.
+
+PDF attachment is optional and can be added later.
+
+---
 
 ## EMAIL
 
-After successful payment send the customer a confirmation email.
+After successful DB payment finalization, the transaction must insert a durable `email_outbox` record.
 
-Include:
+A separate worker sends through Resend and retries failures.
 
-- event name
-- event date
-- venue
-- order number
-- customer name
-- purchased seats
-- total price
-- QR code(s)
-- instructions for entry
+Confirmation includes:
 
-Do not send the ticket before payment has been confirmed server-side.
+- event name;
+- event date/time;
+- venue;
+- order number;
+- customer name where appropriate;
+- purchased seats;
+- total price;
+- one QR per ticket;
+- entry instructions;
+- secure ticket/order link.
 
-## UX
+Do not send tickets before payment has been confirmed server-side.
 
-The purchase flow should be extremely simple:
+Admin resend uses existing tickets and does not regenerate QR tokens.
 
-1. Select seats
-2. Review selection
-3. Enter customer details
-4. Pay
-5. Show confirmation
+---
 
-Show a visible countdown while seats are held:
+## REFUNDS / CANCELLATIONS
 
-"Your seats are reserved for 09:42"
+Refunding is a stateful provider operation, not a one-click local DB change.
 
-If the reservation expires, release the seats and force the user to select them again.
+Required behavior:
 
-## DESIGN
+1. ADMIN requests refund.
+2. Create/refetch an idempotent local refund record.
+3. Call provider.
+4. Do **not** release SOLD seats merely because the request was sent.
+5. After authoritative provider success, one DB transaction voids active tickets, updates order/refund state and releases the seat allocation if business policy allows resale.
+6. Write audit log.
 
-Clean, modern, minimal event-ticketing interface.
+Failed/uncertain refund operations remain visible for admin reconciliation.
 
-The seating map should be the primary UI element.
+---
 
-Use responsive design.
+## ADMIN AUTHORIZATION
 
-Do not introduce unnecessary animations, 3D effects, dashboards or visual complexity.
+Use Supabase Auth. No public/self-service admin signup.
 
-## ARCHITECTURE REQUIREMENT
+Roles:
 
-Before writing implementation code:
+### ADMIN
 
-1. Propose the complete architecture.
-2. Propose the PostgreSQL schema.
-3. Explain the seat reservation transaction and how race conditions are prevented.
-4. Explain the payment/webhook flow.
-5. Explain Supabase RLS policies.
-6. Explain the admin authentication model.
-7. Identify security risks and failure scenarios.
-8. Provide a phased implementation plan.
+May:
 
-Do NOT start by generating the entire application.
+- see event statistics;
+- see/search orders;
+- inspect tickets/payment history;
+- request refunds/cancellations;
+- resend confirmations;
+- inspect reconciliation failures;
+- perform scanner actions.
 
-First produce the architecture and database design for review.
+### SCANNER
+
+May:
+
+- scan/check in tickets;
+- receive only minimal ticket/event information necessary for scan result.
+
+SCANNER must **not** be able to list customer orders, view customer contact details, see finance data or issue refunds.
+
+Client route guards are only UX. Every staff Edge Function verifies Supabase JWT, active staff row and role server-side.
+
+Prefer purpose-specific Edge Functions over broad authenticated direct-table access.
+
+---
+
+## QR CHECK-IN
+
+QR validation is server-side and atomic.
+
+`checkin-ticket` must:
+
+1. authenticate staff JWT;
+2. require active ADMIN or SCANNER role;
+3. look up the scanned bearer token without logging it;
+4. find and `FOR UPDATE` lock ticket;
+5. verify event/status;
+6. if VALID, set CHECKED_IN + timestamp + staff ID;
+7. if already CHECKED_IN, return explicit already-used result and original time;
+8. if VOID/invalid, return explicit result;
+9. audit the action.
+
+Two simultaneous scans of the same ticket may not both report a first successful check-in.
+
+### Launch connectivity
+
+Use online-authoritative scanning in v1 to preserve strict single-use semantics. Prepare venue Wi-Fi/hotspot/device fallback. Do not quietly implement browser-offline check-in without a separate reconciliation design.
+
+---
+
+## REALTIME
+
+Realtime improves UX only.
+
+Production preference: Supabase Realtime Broadcast of sanitized seat deltas.
+
+Clients must re-fetch canonical state after:
+
+- reconnect;
+- browser resume after long suspension;
+- hold expiry;
+- reservation conflict;
+- payment return.
+
+Never send order/customer/payment identifiers in public realtime messages.
+
+---
+
+## RLS / DATABASE SECURITY
+
+Enable RLS on application tables.
+
+### Anonymous users
+
+No direct writes to any application table.
+
+No direct reads of:
+
+- orders;
+- order_seats;
+- seat_allocations;
+- payment_attempts/events;
+- tickets;
+- refunds;
+- outbox;
+- admin/audit tables.
+
+Serve public event/seat state through sanitized API responses and Realtime Broadcast.
+
+### Authenticated staff
+
+Do not give every staff user broad `SELECT` access to orders/tickets. Use Edge Functions that enforce ADMIN vs SCANNER and return only fields required by each screen.
+
+### Service role
+
+Service-role key stays server-side only. Never expose it in Vite environment variables or client bundles.
+
+---
+
+## PUBLIC ORDER ACCESS
+
+Do not let anonymous users fetch orders merely by UUID.
+
+Reservation returns a high-entropy order access token. Store only its hash.
+
+`get-order-status` and customer ticket pages require:
+
+- order ID;
+- access token.
+
+Rate-limit failed access-token lookups and return sanitized data only.
+
+Do not leave the raw order access token in ordinary analytics-visible query strings. Keep it in browser session state across the provider redirect; for emailed ticket links, prefer a URL fragment that the SPA consumes and removes immediately.
+
+---
+
+## SECURITY REQUIREMENTS
+
+Treat this as a payment/ticketing system.
+
+Required:
+
+- never trust client seat availability;
+- never trust client prices;
+- never trust frontend payment state;
+- validate input both at API and critical DB boundaries;
+- use fixed-search-path/hardened SECURITY DEFINER functions;
+- no service-role key in browser;
+- verify payment callbacks against current provider documentation;
+- compare verified amount/currency against local data;
+- webhook idempotency/deduplication;
+- payment creation idempotency/reconciliation;
+- cryptographically random bearer tokens;
+- hash public order access tokens at rest; protect QR bearer tokens with server-only/RLS access and never log them;
+- role-based server authorization;
+- rate-limit sensitive public/staff endpoints;
+- audit privileged actions;
+- appropriate CSP/security headers;
+- collect only needed PII;
+- separate staging and production secrets/projects.
+
+Do not store card details.
+
+---
+
+## OBSERVABILITY / OPERATIONS
+
+Before launch:
+
+- structured Edge Function logs with correlation/request IDs;
+- frontend + backend error monitoring;
+- alert for reconciliation-required payments;
+- alert for stuck/failed email jobs;
+- admin audit log;
+- payment/refund references searchable operationally;
+- backup/PITR appropriate for production and a recovery procedure;
+- staging project + payment sandbox;
+- production-secret rotation procedure;
+- venue scanning connectivity fallback.
+
+---
+
+## REQUIRED TESTS
+
+The project is not production-ready until these are automated.
+
+### Reservation concurrency
+
+- 20+ concurrent attempts for same seat -> exactly one reservation succeeds.
+- overlapping multi-seat requests -> no partial order/allocation.
+- expired hold can be reclaimed.
+- duplicate seat IDs rejected.
+
+### Payment
+
+- normal success;
+- normal failure;
+- user abandons provider;
+- webhook before browser return;
+- browser return before webhook;
+- duplicate webhook;
+- delayed webhook;
+- amount/currency mismatch;
+- provider API timeout;
+- ambiguous create-payment timeout/retry;
+- **successful late payment after seat was reallocated -> reconciliation path, no seat theft**.
+
+### Tickets
+
+- one ticket per paid seat;
+- duplicate webhook does not generate duplicates;
+- simultaneous QR scans -> one first check-in;
+- VOID ticket cannot check in;
+- refunded/voided seat can be resold with a new valid ticket if policy allows.
+
+### Permissions
+
+- anon cannot read private tables;
+- scanner cannot list orders/customer data/refund;
+- admin-only endpoints reject scanner;
+- public order access requires valid order token.
+
+### Browser UX
+
+Playwright coverage for desktop/mobile seat selection, checkout validation, hold expiry, payment-return states, confirmation, admin and scanner flows.
+
+### Load
+
+Load-test likely on-sale burst with concentrated attempts on popular seats and many concurrent map viewers.
+
+---
+
+## IMPLEMENTATION PHASES
+
+### Phase 0 — Foundations
+
+- repository and CI;
+- React/Vite/Tailwind frontend scaffold;
+- selected UI/query/router libraries;
+- staging + production Supabase projects;
+- migration/seed workflow;
+- environment/secrets setup.
+
+### Phase 1 — Database correctness
+
+- implement schema;
+- implement seat allocation transaction;
+- implement expiry;
+- concurrency test suite;
+- sanitized event/seat read API;
+- seed venue layout.
+
+**Do not begin payment integration until the allocation race tests pass.**
+
+### Phase 2 — Seat-map frontend
+
+- SVG map;
+- mobile/desktop pan/zoom;
+- seat state/legend;
+- selected-seat summary;
+- reservation flow;
+- countdown;
+- realtime + reconnect/refetch handling;
+- accessibility pass.
+
+### Phase 3 — Payments
+
+- customer form;
+- payment attempt model;
+- one provider adapter/sandbox;
+- create-payment recovery/idempotency;
+- verified webhook;
+- transactional payment finalization;
+- late-payment conflict/reconciliation handling.
+
+### Phase 4 — Tickets/email
+
+- QR/ticket generation;
+- order-access token hashing and protected QR bearer tokens;
+- transactional email outbox;
+- Resend worker/retries;
+- secure customer ticket view;
+- printable ticket view.
+
+### Phase 5 — Admin/refunds
+
+- Auth provisioning;
+- ADMIN/SCANNER role enforcement;
+- stats/orders/tickets;
+- refund workflow;
+- reconciliation queue;
+- audit log;
+- resend confirmation.
+
+### Phase 6 — Check-in
+
+- mobile scanner UI;
+- atomic check-in;
+- clear status responses;
+- manual code fallback;
+- real-device/network testing.
+
+### Phase 7 — Launch hardening
+
+- load/concurrency testing;
+- payment/webhook retry tests;
+- endpoint/RLS review;
+- CSP/security headers;
+- logs/monitoring/alerts;
+- backup/recovery review;
+- deliverability checks;
+- production payment credentials;
+- venue network plan;
+- DNS/subdomain cutover.
+
+---
+
+## IMPLEMENTATION RULES FOR CODING AGENT / DEVELOPER
+
+1. Read `ARCHITECTURE_UPDATED.md` before implementation.
+2. Do not replace database invariants with frontend checks.
+3. Keep payment/refund provider code behind adapter modules.
+4. Keep Edge Functions thin where possible; transactional state transitions live in explicit Postgres functions.
+5. Do not expose core private tables because it is convenient for the UI.
+6. Use typed API DTOs and Zod validation at HTTP boundaries.
+7. Keep migrations reviewable and reversible where practical.
+8. Add tests with every state transition, not after the entire app is built.
+9. Never silently accept an impossible/ambiguous payment state. Put it in reconciliation and alert an admin.
+10. Do not introduce additional frameworks/state libraries without a concrete problem they solve.
+
+---
+
+## PROJECT INPUTS STILL NEEDED BEFORE RELEVANT PHASES
+
+- Choose GoPay or Comgate for the first integration.
+- Obtain the real GoJa Music Hall seating/section layout.
+- Confirm price categories and prices.
+- Confirm maximum seats per order (engineering default: 10).
+- Confirm refund/resale policy.
+- Confirm exact billing/invoice fields required.
+- Provide event brand assets/palette/type choices for final UI.
+
+These inputs do not block building/testing the core database allocation model against a placeholder seat fixture.

@@ -1,0 +1,45 @@
+{
+  "event": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "Galavečer Tumbao 2027",
+    "eventDate": "2027-05-29T17:00:00.000Z",
+    "venue": "GoJa Music Hall, Prague",
+    "timezone": "Europe/Prague",
+    "currency": "CZK"
+  },
+  "categories": {
+    "PREMIUM": { "name": "1st category", "priceMinor": 99000 },
+    "STANDARD": { "name": "2nd category", "priceMinor": 79000 },
+    "VALUE": { "name": "3rd category", "priceMinor": 59000 }
+  },
+  "seatLayouts": [
+    { "section": "D", "rowSeatCounts": [10, 10, 10, 10, 10, 10, 10], "x": 205, "y": 50, "direction": "rtl", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "STANDARD" },
+    { "section": "C", "rowSeatCounts": [10, 10, 10, 10, 10, 10, 10], "x": 339, "y": 50, "direction": "ltr", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "PREMIUM" },
+    { "section": "B", "rowSeatCounts": [10, 10, 10, 10, 10, 10, 10], "x": 459, "y": 50, "direction": "rtl", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "PREMIUM" },
+    { "section": "A", "rowSeatCounts": [10, 10, 10, 10, 10, 10, 10], "x": 590, "y": 50, "direction": "ltr", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "STANDARD" },
+    { "section": "H", "rowSeatCounts": [10, 10, 10, 10, 10, 10, 10], "x": 205, "y": 160, "direction": "rtl", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "STANDARD" },
+    { "section": "G", "rowSeatCounts": [10, 10, 10, 10, 10, 10, 10], "x": 339, "y": 160, "direction": "ltr", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "PREMIUM" },
+    { "section": "F", "rowSeatCounts": [10, 10, 10, 10, 10, 10, 10], "x": 459, "y": 160, "direction": "rtl", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "PREMIUM" },
+    { "section": "E", "rowSeatCounts": [10, 10, 10, 10, 10, 10, 10], "x": 590, "y": 160, "direction": "ltr", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "STANDARD" },
+    { "section": "L", "rowSeatCounts": [9, 8, 6, 5], "rowXOffsets": [0, 11, 33, 44], "x": 215, "y": 270, "direction": "rtl", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "VALUE" },
+    { "section": "K", "rowSeatCounts": [10, 10, 10, 10, 10, 10], "x": 339, "y": 270, "direction": "ltr", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "VALUE" },
+    { "section": "J", "rowSeatCounts": [10, 10, 10, 10, 10, 10], "x": 459, "y": 270, "direction": "rtl", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "VALUE" },
+    { "section": "I", "rowSeatCounts": [9, 8, 6, 5], "x": 590, "y": 270, "direction": "ltr", "numberStart": 1, "seatDx": 11, "seatDy": 0, "rowDx": 0, "rowDy": 13, "rotation": 0, "category": "VALUE" },
+    { "section": "M", "idPrefix": "M-left", "rowSeatCounts": [10, 10, 10, 10, 10, 12], "rowXOffsets": [0, -5, -10, -15, -20, -45], "x": 61, "y": 124, "direction": "ltr", "numberStart": 1, "seatDx": 10, "seatDy": 3, "rowDx": -5, "rowDy": 13, "rotation": 17, "category": "VALUE" },
+    { "section": "M", "idPrefix": "M-right", "rowSeatCounts": [10, 10, 10, 10, 10, 12], "x": 748, "y": 158, "direction": "rtl", "numberStart": 1, "seatDx": 10, "seatDy": -3, "rowDx": 5, "rowDy": 13, "rotation": -17, "category": "VALUE" }
+  ],
+  "initialSoldSeatIds": ["seat-C-1-1", "seat-C-1-2"],
+  "initialHeldSeatIds": ["seat-B-2-4"],
+  "samplePaidOrder": {
+    "id": "order-sample-paid",
+    "orderNumber": "TUM-2027-00001",
+    "customer": { "name": "Demo Guest", "email": "guest@example.test", "phone": "+420 700 000 000" },
+    "seatIds": ["seat-C-1-1", "seat-C-1-2"],
+    "ticketCodes": ["TUM-DEMO-001", "TUM-DEMO-002"],
+    "qrTokens": ["tumbao_demo_ticket_001", "tumbao_demo_ticket_002"]
+  },
+  "admins": [
+    { "id": "admin-demo", "name": "Demo Administrator", "role": "ADMIN" },
+    { "id": "scanner-demo", "name": "Door Scanner", "role": "SCANNER" }
+  ]
+}
