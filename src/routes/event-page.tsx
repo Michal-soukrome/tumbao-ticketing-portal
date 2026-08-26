@@ -262,7 +262,7 @@ export function EventPage() {
           {/* MAP */}
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
             <div className=" bg-white px-5 py-3">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between flex-wrap gap-4">
                 <span className="text-sm font-medium text-slate-700">
                   Vyberte svá místa
                   <span className="flex items-center gap-2 text-sm font-medium text-emerald-600">
@@ -280,7 +280,7 @@ export function EventPage() {
 
             {/* LEGEND */}
             <div
-              className="border-b border-slate-200 px-5 py-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500 bg-white sm:justify-start"
+              className="border-b border-slate-200 px-5 py-3 flex flex-wrap items-center justify-start md:justify-center gap-x-6 gap-y-2 text-xs text-slate-500 bg-white sm:justify-start"
               aria-label="Seat map legend"
             >
               <span className="flex items-center gap-2">
@@ -308,7 +308,7 @@ export function EventPage() {
               </span>
             </div>
 
-            <div className="min-h-[520px] p-3 sm:p-6 lg:min-h-[650px]">
+            <div className="min-h-auto p-3 sm:p-6 lg:min-h-[650px]">
               <SeatMap
                 seats={seats}
                 selected={selected}

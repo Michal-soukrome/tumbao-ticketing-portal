@@ -158,4 +158,5 @@ export const ticketStatusLabel = (status: TicketStatus) => {
 
 export const seatLabel = (
   seat: Pick<SeatDto, "section" | "rowLabel" | "seatNumber">,
-) => `${seat.section} · row ${seat.rowLabel} · seat ${seat.seatNumber}`;
+) =>
+  `Sektor ${seat.section} · řada ${seat.rowLabel} · sedadlo ${seat.seatNumber}`;
