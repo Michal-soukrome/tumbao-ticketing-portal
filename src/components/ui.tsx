@@ -16,7 +16,12 @@ export function Input({
   className = "",
   ...props
 }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={`input ${className}`} {...props} />;
+  return (
+    <input
+      className={`group rounded-xl border border-slate-200 px-4 py-3 field w-full input ${className}`}
+      {...props}
+    />
+  );
 }
 
 export function Card({

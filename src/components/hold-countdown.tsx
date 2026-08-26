@@ -35,7 +35,7 @@ export function HoldCountdown({
         remaining < 60_000 ? "countdown countdown-urgent" : "countdown"
       }
     >
-      Hold {minutesPart}:{secondsPart}
+      Zbývá {minutesPart}:{secondsPart}
     </span>
   );
 }

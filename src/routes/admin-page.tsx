@@ -9,7 +9,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useRuntime } from "../app/runtime-context";
 import { Badge, Card, Notice } from "../components/ui";
-import { formatMoney } from "../domain/models";
+import { formatMoney, orderStatusLabel } from "../domain/models";
 
 const toneFor = (status: string) =>
   status === "PAID"
@@ -159,7 +159,9 @@ export function AdminPage() {
                     {formatMoney(order.totalMinor, order.currency)}
                   </td>
                   <td className="py-3 pr-4">
-                    <Badge tone={toneFor(order.status)}>{order.status}</Badge>
+                    <Badge tone={toneFor(order.status)}>
+                      {orderStatusLabel(order.status)}
+                    </Badge>
                   </td>
                 </tr>
               ))}

@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { getOrderCredentials } from "../app/order-session";
 import { useRuntime } from "../app/runtime-context";
 import { Badge, Button, Card, EmptyState, Notice } from "../components/ui";
-import { formatMoney, seatLabel } from "../domain/models";
+import { formatMoney, orderStatusLabel, seatLabel } from "../domain/models";
 
 // NOTE: same caveat as the other pages — `Badge`, `Button`, `Card`,
 // `EmptyState`, and `Notice` come from "../components/ui" and I'm assuming
@@ -23,7 +23,7 @@ export function OrderPage({ orderId }: { orderId: string }) {
   });
   if (!credentials)
     return (
-      <div className="mx-auto max-w-md px-4 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-8">
         <EmptyState title="Vyžadován bezpečný odkaz na objednávku">
           <p className="text-sm text-slate-600">
             Tento prohlížeč nemá přístupový token pro tuto objednávku.
@@ -39,13 +39,13 @@ export function OrderPage({ orderId }: { orderId: string }) {
     );
   if (order.isPending)
     return (
-      <div className="mx-auto max-w-md px-4 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="h-[520px] animate-pulse rounded-2xl bg-slate-200" />
       </div>
     );
   if (order.isError || !order.data)
     return (
-      <div className="mx-auto max-w-md px-4 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-8">
         <Notice className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Stav objednávky nelze načíst.
         </Notice>
@@ -66,7 +66,7 @@ export function OrderPage({ orderId }: { orderId: string }) {
         <p className="text-sm text-slate-500">
           Objednávka {order.data.orderNumber}
         </p>
-        <Badge tone="warning">{order.data.status}</Badge>
+        <Badge tone="warning">{orderStatusLabel(order.data.status)}</Badge>
       </div>
     );
 

@@ -34,6 +34,7 @@ function MobileBookingBar({
   held,
   onContinue,
   onChangeSeats,
+  onClearSelection,
 }: {
   seatCount: number;
   totalLabel: string;
@@ -41,30 +42,24 @@ function MobileBookingBar({
   held?: boolean;
   onContinue: () => void;
   onChangeSeats?: () => void;
+  onClearSelection?: () => void;
 }) {
-  const barRef = useRef<HTMLDivElement>(null);
-  const supportsPopover =
-    typeof HTMLElement !== "undefined" &&
-    "showPopover" in HTMLElement.prototype;
-
-  useEffect(() => {
-    const bar = barRef.current;
-    if (!bar || !supportsPopover) return;
-    bar.showPopover();
-    return () => {
-      if (bar.matches(":popover-open")) bar.hidePopover();
-    };
-  }, [supportsPopover]);
-
   return (
     <div
-      ref={barRef}
-      popover={supportsPopover ? "manual" : undefined}
-      className="fixed bottom-5 left-1/2 z-40 m-0 flex w-[calc(100%-2rem)] max-w-[70%] -translate-x-1/2 items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_30px_rgba(15,23,42,0.12)] lg:hidden [&:popover-open]:flex"
+      className="
+  fixed bottom-5 left-1/2 z-40
+  flex w-[calc(100%-2rem)] max-w-lg
+  -translate-x-1/2
+  items-center justify-between gap-4
+  rounded-2xl border border-slate-200
+  bg-white px-4 py-3 shadow-lg
+  
+"
     >
       <span className="flex flex-col leading-tight">
         <strong className="text-sm font-semibold text-slate-900">
-          {seatCount} {held ? "held " : ""}seat{seatCount === 1 ? "" : "s"}
+          {seatCount} {held ? "držených" : "držené"}{" "}
+          {seatCount === 1 ? "sedadlo" : "sedadel"}
         </strong>
         <small className="text-xs text-slate-500">{totalLabel}</small>
       </span>
@@ -76,7 +71,16 @@ function MobileBookingBar({
             disabled={pending}
             onClick={onChangeSeats}
           >
-            Change seats
+            Změnit nebo zrušit výběr sedadel
+          </Button>
+        ) : null}
+        {held && onClearSelection ? (
+          <Button
+            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
+            disabled={pending}
+            onClick={onClearSelection}
+          >
+            Zrušit výběr sedadel
           </Button>
         ) : null}
 
@@ -85,7 +89,7 @@ function MobileBookingBar({
           disabled={pending}
           onClick={onContinue}
         >
-          {held ? "Continue checkout" : "Continue"}
+          {held ? "Pokračovat v rezervaci" : "Pokračovat"}
         </Button>
       </div>
     </div>
@@ -234,6 +238,12 @@ export function EventPage() {
       : reserve.error
         ? "Reservation failed. Please try again."
         : null;
+  const clearSelection = () => {
+    if (!selected.size) return;
+    if (!window.confirm("Opravdu chcete zrušit výběr sedadel?")) return;
+    setSelected(new Set());
+  };
+
   const continueCheckout = () => {
     if (heldOrder && activeCredentials) {
       void navigate({
@@ -373,7 +383,16 @@ export function EventPage() {
               disabled={changeSeats.isPending}
               onClick={() => changeSeats.mutate()}
             >
-              {changeSeats.isPending ? "Unlocking seats…" : "Change seats"}
+              {changeSeats.isPending ? "Uvolňuji sedadla…" : "Změnit sedadla"}
+            </Button>
+          ) : null}
+          {!heldOrder && selected.size ? (
+            <Button
+              className="mt-4 w-full rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              disabled={reserve.isPending}
+              onClick={clearSelection}
+            >
+              Zrušit výběr sedadel
             </Button>
           ) : null}
           {changeSeats.error ? (
@@ -412,6 +431,9 @@ export function EventPage() {
           held={Boolean(heldOrder)}
           onContinue={continueCheckout}
           onChangeSeats={heldOrder ? () => changeSeats.mutate() : undefined}
+          onClearSelection={
+            !heldOrder && selected.size ? clearSelection : undefined
+          }
         />
       ) : null}
     </div>
