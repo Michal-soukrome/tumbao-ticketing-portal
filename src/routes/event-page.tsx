@@ -45,21 +45,11 @@ function MobileBookingBar({
   onClearSelection?: () => void;
 }) {
   return (
-    <div
-      className="
-  fixed bottom-5 left-1/2 z-40
-  flex w-[calc(100%-2rem)] max-w-lg
-  -translate-x-1/2
-  items-center justify-between gap-4
-  rounded-2xl border border-slate-200
-  bg-white px-4 py-3 shadow-lg
-  
-"
-    >
+    <div className="fixed bottom-5 left-1/2 z-40 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-lg">
       <span className="flex flex-col leading-tight">
         <strong className="text-sm font-semibold text-slate-900">
-          {seatCount} {held ? "držených" : "držené"}{" "}
-          {seatCount === 1 ? "sedadlo" : "sedadel"}
+          {seatCount} {held ? "držených" : "držená"}{" "}
+          {seatCount === 1 ? "sedadel" : "sedadla"}
         </strong>
         <small className="text-xs text-slate-500">{totalLabel}</small>
       </span>
@@ -329,7 +319,7 @@ export function EventPage() {
             {activeCredentials && activeOrder.isPending
               ? "Obnovuje se vaše držení..."
               : cartSeats.length
-                ? `${cartSeats.length} ${heldOrder ? "held " : ""}seat${cartSeats.length === 1 ? "" : "s"}`
+                ? `${cartSeats.length} ${heldOrder ? "držené " : ""}míst${cartSeats.length === 1 ? "o" : "a"}`
                 : "Žádná místa vybrána"}
           </h2>
           {cartSeats.length ? (
